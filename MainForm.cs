@@ -1,0 +1,782 @@
+using System.Diagnostics;
+using System.Reflection;
+
+namespace CyberpunkVRInstaller;
+
+internal sealed class MainForm : Form
+{
+    private const string BuildMarker = "SAFE MODE FIX 2";
+    private readonly InstallerEngine _engine = new();
+    private readonly ComponentInstaller _componentInstaller = new();
+    private readonly ModSafeModeManager _safeModeManager = new();
+    private readonly TextBox _pathBox = new();
+    private readonly CyberButton _browseButton = new();
+    private readonly CyberButton _installButton = new();
+    private readonly CyberButton _removeButton = new();
+    private readonly CyberButton _refreshButton = new();
+    private readonly CyberButton _componentsButton = new();
+    private readonly CyberButton _archivesButton = new();
+    private readonly CyberButton _toggleVrButton = new();
+    private readonly CyberButton _safeModeButton = new();
+    private readonly ListView _dependencies = new();
+    private readonly Label _status = new();
+    private readonly Label _pathHint = new();
+    private readonly CyberProgressBar _progress = new();
+    private readonly LinkLabel _projectLink = new();
+    private CancellationTokenSource? _refreshCts;
+    private string? _shownVersionWarningKey;
+
+    private static readonly Color Background = Color.FromArgb(10, 13, 18);
+    private static readonly Color Panel = Color.FromArgb(19, 24, 32);
+    private static readonly Color PanelLight = Color.FromArgb(25, 32, 42);
+    private static readonly Color Cyan = Color.FromArgb(0, 236, 255);
+    private static readonly Color Yellow = Color.FromArgb(255, 224, 0);
+    private static readonly Color Muted = Color.FromArgb(158, 170, 184);
+
+    public MainForm()
+    {
+        Text = $"Cyberpunk VR Port — Installer {InstallerEngine.ModVersion} — {BuildMarker}";
+        ClientSize = new Size(1040, 740);
+        MinimumSize = new Size(920, 680);
+        BackColor = Background;
+        ForeColor = Color.White;
+        Font = new Font("Segoe UI", 10F);
+        StartPosition = FormStartPosition.CenterScreen;
+        FormBorderStyle = FormBorderStyle.Sizable;
+
+        BuildUi();
+        Shown += async (_, _) => await AutoDetectAsync();
+        FormClosed += (_, _) => _refreshCts?.Cancel();
+    }
+
+    private void BuildUi()
+    {
+        var root = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            RowCount = 2,
+            ColumnCount = 1,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
+            BackColor = Background
+        };
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        Controls.Add(root);
+
+        var header = new Panel { Dock = DockStyle.Fill, BackColor = Panel, Padding = new Padding(34, 20, 34, 14), Margin = Padding.Empty };
+        header.Paint += (_, e) =>
+        {
+            using var cyanPen = new Pen(Cyan, 2);
+            using var yellowPen = new Pen(Yellow, 2);
+            e.Graphics.DrawLine(yellowPen, 0, header.Height - 2, header.Width * 0.38f, header.Height - 2);
+            e.Graphics.DrawLine(cyanPen, header.Width * 0.38f, header.Height - 2, header.Width, header.Height - 2);
+        };
+        var title = new Label
+        {
+            Text = "CYBERPUNK 2077  /  VR PORT",
+            Font = new Font("Segoe UI Semibold", 24F),
+            ForeColor = Yellow,
+            AutoSize = true,
+            Location = new Point(34, 20),
+            BackColor = Color.Transparent
+        };
+        var subtitle = new Label
+        {
+            Text = "АВТОНОМНЫЙ WINDOWS-ИНСТАЛЛЯТОР  •  CYBERPUNK 2077 2.5",
+            Font = new Font("Segoe UI", 9.5F),
+            ForeColor = Muted,
+            AutoSize = true,
+            Location = new Point(37, 75),
+            BackColor = Color.Transparent
+        };
+        var version = new Label
+        {
+            Text = $"{InstallerEngine.ModVersion}  •  FIX 2",
+            Font = new Font("Consolas", 10F, FontStyle.Bold),
+            ForeColor = Cyan,
+            BackColor = PanelLight,
+            AutoSize = false,
+            Size = new Size(170, 30),
+            TextAlign = ContentAlignment.MiddleCenter,
+            Anchor = AnchorStyles.Top | AnchorStyles.Right,
+            Location = new Point(header.Width - 190, 27)
+        };
+        header.Resize += (_, _) => version.Left = header.ClientSize.Width - version.Width - 34;
+        header.Controls.Add(title);
+        header.Controls.Add(subtitle);
+        header.Controls.Add(version);
+        root.Controls.Add(header, 0, 0);
+
+        var body = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(34, 18, 34, 18),
+            RowCount = 8,
+            ColumnCount = 1,
+            Margin = Padding.Empty,
+            BackColor = Background
+        };
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+        body.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 27));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 12));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
+        root.Controls.Add(body, 0, 1);
+
+        body.Controls.Add(CreateSectionLabel("01  /  ПАПКА ИГРЫ"), 0, 0);
+
+        var pathPanel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+        pathPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        pathPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 136));
+        pathPanel.Margin = Padding.Empty;
+        StyleTextBox(_pathBox);
+        _pathBox.Dock = DockStyle.Fill;
+        _pathBox.Margin = new Padding(0, 4, 8, 4);
+        _pathBox.TextChanged += async (_, _) => await RefreshStateAsync();
+        StyleButton(_browseButton, "ОБЗОР…", false);
+        _browseButton.Dock = DockStyle.Fill;
+        _browseButton.Margin = new Padding(0, 3, 0, 3);
+        _browseButton.Click += Browse;
+        pathPanel.Controls.Add(_pathBox, 0, 0);
+        pathPanel.Controls.Add(_browseButton, 1, 0);
+        body.Controls.Add(pathPanel, 0, 1);
+
+        _pathHint.Dock = DockStyle.Fill;
+        _pathHint.ForeColor = Muted;
+        _pathHint.Font = new Font("Segoe UI", 9F);
+        _pathHint.TextAlign = ContentAlignment.MiddleLeft;
+        _pathHint.Padding = new Padding(2, 0, 0, 0);
+        body.Controls.Add(_pathHint, 0, 2);
+
+        var depHeader = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4 };
+        depHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        depHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 156));
+        depHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 174));
+        depHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 116));
+        depHeader.Margin = Padding.Empty;
+        depHeader.Controls.Add(CreateSectionLabel("02  /  ЗАВИСИМОСТИ"), 0, 0);
+        StyleButton(_safeModeButton, "SAFE MODE", false);
+        _safeModeButton.Dock = DockStyle.Fill;
+        _safeModeButton.Margin = new Padding(0, 4, 8, 4);
+        _safeModeButton.Click += async (_, _) => await ToggleSafeModeAsync();
+        depHeader.Controls.Add(_safeModeButton, 1, 0);
+        StyleButton(_archivesButton, "АРХИВЫ NEXUS…", false);
+        _archivesButton.Dock = DockStyle.Fill;
+        _archivesButton.Margin = new Padding(0, 4, 8, 4);
+        _archivesButton.Click += async (_, _) => await InstallLocalArchivesAsync();
+        depHeader.Controls.Add(_archivesButton, 2, 0);
+        StyleButton(_refreshButton, "ПРОВЕРИТЬ", false);
+        _refreshButton.Dock = DockStyle.Fill;
+        _refreshButton.Margin = new Padding(0, 4, 0, 4);
+        _refreshButton.Click += async (_, _) => await RefreshStateAsync();
+        depHeader.Controls.Add(_refreshButton, 3, 0);
+        body.Controls.Add(depHeader, 0, 3);
+
+        _dependencies.Dock = DockStyle.Fill;
+        _dependencies.View = View.Details;
+        _dependencies.FullRowSelect = true;
+        _dependencies.GridLines = true;
+        _dependencies.BackColor = Panel;
+        _dependencies.ForeColor = Color.White;
+        _dependencies.BorderStyle = BorderStyle.None;
+        _dependencies.HeaderStyle = ColumnHeaderStyle.Nonclickable;
+        _dependencies.HideSelection = false;
+        _dependencies.OwnerDraw = true;
+        _dependencies.Font = new Font("Segoe UI", 9.5F);
+        _dependencies.SmallImageList = new ImageList { ImageSize = new Size(1, 28), ColorDepth = ColorDepth.Depth32Bit };
+        _dependencies.Columns.Add("", 46);
+        _dependencies.Columns.Add("КОМПОНЕНТ", 390);
+        _dependencies.Columns.Add("МИНИМУМ", 128);
+        _dependencies.Columns.Add("СОСТОЯНИЕ", 340);
+        ConfigureDependencyDrawing();
+        _dependencies.Resize += (_, _) => ResizeDependencyColumns();
+        body.Controls.Add(_dependencies, 0, 4);
+
+        _status.Text = "Выберите папку игры";
+        _status.ForeColor = Muted;
+        _status.Dock = DockStyle.Fill;
+        _status.Font = new Font("Segoe UI Semibold", 9.5F);
+        _status.TextAlign = ContentAlignment.MiddleLeft;
+        _status.Padding = new Padding(2, 0, 0, 0);
+        body.Controls.Add(_status, 0, 5);
+        _progress.Dock = DockStyle.Fill;
+        _progress.Margin = new Padding(2, 2, 2, 2);
+        body.Controls.Add(_progress, 0, 6);
+
+        var actions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 6, RowCount = 1 };
+        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 218));
+        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 156));
+        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 128));
+        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 104));
+        actions.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 146));
+        actions.Margin = Padding.Empty;
+        _projectLink.Text = "GitHub проекта  •  лицензия MIT";
+        _projectLink.LinkColor = Cyan;
+        _projectLink.ActiveLinkColor = Yellow;
+        _projectLink.Dock = DockStyle.Fill;
+        _projectLink.TextAlign = ContentAlignment.MiddleLeft;
+        _projectLink.Font = new Font("Segoe UI", 9F);
+        _projectLink.Margin = new Padding(2, 0, 8, 0);
+        _projectLink.AutoEllipsis = true;
+        _projectLink.LinkClicked += (_, e) =>
+        {
+            if (e.Link?.LinkData as string == "license") ShowLicense();
+            else Process.Start(new ProcessStartInfo("https://github.com/dariulone/cyberpunk-vr-port") { UseShellExecute = true });
+        };
+        _projectLink.Links.Clear();
+        _projectLink.Links.Add(0, "GitHub проекта".Length, "project");
+        _projectLink.Links.Add("GitHub проекта  •  ".Length, "лицензия MIT".Length, "license");
+        StyleButton(_componentsButton, "УСТАНОВИТЬ КОМПОНЕНТЫ", false);
+        _componentsButton.Dock = DockStyle.Fill;
+        _componentsButton.Click += async (_, _) => await InstallComponentsAsync();
+        StyleButton(_toggleVrButton, "ОТКЛЮЧИТЬ VR", false);
+        _toggleVrButton.Dock = DockStyle.Fill;
+        _toggleVrButton.Click += async (_, _) => await ToggleVrAsync();
+        StyleButton(_removeButton, "УДАЛИТЬ МОД", false);
+        _removeButton.Dock = DockStyle.Fill;
+        _removeButton.Click += async (_, _) => await RemoveAsync();
+        StyleButton(_installButton, "УСТАНОВИТЬ", true);
+        _installButton.Dock = DockStyle.Fill;
+        _installButton.Click += async (_, _) => await InstallAsync();
+        var close = new CyberButton();
+        StyleButton(close, "ЗАКРЫТЬ", false);
+        close.Dock = DockStyle.Fill;
+        close.Click += (_, _) => Close();
+        actions.Controls.Add(_projectLink, 0, 0);
+        actions.Controls.Add(_componentsButton, 1, 0);
+        actions.Controls.Add(_toggleVrButton, 2, 0);
+        actions.Controls.Add(_removeButton, 3, 0);
+        actions.Controls.Add(close, 4, 0);
+        actions.Controls.Add(_installButton, 5, 0);
+        body.Controls.Add(actions, 0, 7);
+    }
+
+    private static Label CreateSectionLabel(string text) => new()
+    {
+        Text = text,
+        ForeColor = Cyan,
+        Font = new Font("Segoe UI Semibold", 8.5F),
+        Dock = DockStyle.Fill,
+        TextAlign = ContentAlignment.BottomLeft,
+        Padding = new Padding(2, 0, 0, 2)
+    };
+
+    private void ResizeDependencyColumns()
+    {
+        if (_dependencies.Columns.Count < 4) return;
+        var available = Math.Max(400, _dependencies.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - 2);
+        _dependencies.Columns[0].Width = 46;
+        _dependencies.Columns[2].Width = 128;
+        _dependencies.Columns[1].Width = Math.Max(300, (int)(available * 0.42));
+        _dependencies.Columns[3].Width = Math.Max(220, available - _dependencies.Columns[0].Width -
+            _dependencies.Columns[1].Width - _dependencies.Columns[2].Width);
+    }
+
+    private void ConfigureDependencyDrawing()
+    {
+        _dependencies.DrawColumnHeader += (_, e) =>
+        {
+            using var background = new SolidBrush(PanelLight);
+            using var border = new Pen(Color.FromArgb(54, 65, 78));
+            e.Graphics.FillRectangle(background, e.Bounds);
+            e.Graphics.DrawRectangle(border, e.Bounds.X, e.Bounds.Y, e.Bounds.Width - 1, e.Bounds.Height - 1);
+            var bounds = new Rectangle(e.Bounds.X + 8, e.Bounds.Y, e.Bounds.Width - 12, e.Bounds.Height);
+            using var headerFont = new Font("Segoe UI Semibold", 8.5F);
+            TextRenderer.DrawText(e.Graphics, e.Header?.Text ?? "", headerFont, bounds,
+                Muted, TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis);
+        };
+        _dependencies.DrawItem += (_, _) => { };
+        _dependencies.DrawSubItem += (_, e) =>
+        {
+            if (e.Item is null || e.SubItem is null) return;
+            var selected = e.Item.Selected;
+            var rowColor = selected ? Color.FromArgb(29, 58, 66) :
+                (e.ItemIndex % 2 == 0 ? Panel : Color.FromArgb(16, 21, 28));
+            using var background = new SolidBrush(rowColor);
+            using var border = new Pen(Color.FromArgb(48, 58, 70));
+            e.Graphics.FillRectangle(background, e.Bounds);
+            e.Graphics.DrawLine(border, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+            var bounds = new Rectangle(e.Bounds.X + (e.ColumnIndex == 0 ? 0 : 8), e.Bounds.Y,
+                e.Bounds.Width - (e.ColumnIndex == 0 ? 0 : 12), e.Bounds.Height);
+            var flags = TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis |
+                (e.ColumnIndex == 0 ? TextFormatFlags.HorizontalCenter : TextFormatFlags.Left);
+            TextRenderer.DrawText(e.Graphics, e.SubItem.Text, Font, bounds, e.Item.ForeColor, flags);
+        };
+    }
+
+    private async Task AutoDetectAsync()
+    {
+        _status.Text = "Поиск установленной игры…";
+        var installs = await Task.Run(GameLocator.FindInstallations);
+        if (installs.Count > 0) _pathBox.Text = installs[0];
+        else await RefreshStateAsync();
+    }
+
+    private async Task RefreshStateAsync()
+    {
+        _refreshCts?.Cancel();
+        _refreshCts = new CancellationTokenSource();
+        var token = _refreshCts.Token;
+        var root = _pathBox.Text.Trim();
+        var valid = GameLocator.IsGameRoot(root);
+        var gameVersion = valid ? GameVersionChecker.Check(root) : null;
+        var compatibleVersion = gameVersion?.State == GameVersionState.Compatible;
+        _pathHint.Text = !valid
+            ? "Укажите корень игры, содержащий папки bin, r6 и red4ext"
+            : compatibleVersion
+                ? $"✓ {gameVersion!.Details}"
+                : $"⚠ {gameVersion!.Details}";
+        _pathHint.ForeColor = !valid ? Muted : compatibleVersion ? Color.FromArgb(77, 230, 138) : Yellow;
+        _installButton.Enabled = valid && compatibleVersion;
+        _componentsButton.Enabled = valid && compatibleVersion;
+        _archivesButton.Enabled = valid && compatibleVersion;
+        _removeButton.Enabled = valid && _engine.IsInstalled(root);
+        _toggleVrButton.Enabled = valid && _engine.IsInstalled(root);
+        _safeModeButton.Enabled = valid;
+        _dependencies.Items.Clear();
+        if (!valid)
+        {
+            _status.Text = "Игра не найдена";
+            _status.ForeColor = Muted;
+            return;
+        }
+
+        _status.Text = "Проверка зависимостей…";
+        try
+        {
+            var checks = await Task.Run(() => DependencyChecker.Check(root), token);
+            if (token.IsCancellationRequested) return;
+            var gameItem = new ListViewItem(compatibleVersion ? "✓" : "!")
+            {
+                ForeColor = compatibleVersion ? Color.FromArgb(77, 230, 138) : Yellow
+            };
+            gameItem.SubItems.Add("Cyberpunk 2077");
+            gameItem.SubItems.Add(GameVersionChecker.SupportedGameVersion);
+            gameItem.SubItems.Add(gameVersion!.Details);
+            _dependencies.Items.Add(gameItem);
+            foreach (var dep in checks)
+            {
+                var item = new ListViewItem(dep.Found ? "✓" : "!") { ForeColor = dep.Found ? Color.FromArgb(77, 230, 138) : Yellow };
+                item.SubItems.Add(dep.Name);
+                item.SubItems.Add(dep.MinimumVersion);
+                item.SubItems.Add(dep.Details);
+                _dependencies.Items.Add(item);
+            }
+
+            var installed = _engine.GetInstalledVersion(root);
+            var modState = _engine.GetModState(root);
+            var safeMode = _safeModeManager.GetStatus(root);
+            _installButton.Text = installed is null ? "УСТАНОВИТЬ" : "ПЕРЕУСТАНОВИТЬ";
+            _toggleVrButton.Text = _engine.IsDisabled(root) ? "ВКЛЮЧИТЬ VR" : "ОТКЛЮЧИТЬ VR";
+            _safeModeButton.Text = safeMode.IsActive
+                ? (safeMode.Verified ? "ВКЛЮЧИТЬ МОДЫ" : "ПОЧИНИТЬ SAFE MODE")
+                : "SAFE MODE";
+            _safeModeButton.Primary = safeMode.IsActive;
+            _removeButton.Enabled = installed is not null && !safeMode.IsActive;
+            _toggleVrButton.Enabled = installed is not null && !safeMode.IsActive;
+            _installButton.Enabled = compatibleVersion && !safeMode.IsActive;
+            _componentsButton.Enabled = compatibleVersion && !safeMode.IsActive;
+            _archivesButton.Enabled = compatibleVersion && !safeMode.IsActive;
+            if (safeMode.IsActive)
+            {
+                _status.Text = safeMode.Verified
+                    ? "SAFE MODE: все пути загрузки модов отключены — проверка пройдена"
+                    : $"SAFE MODE неполный: проблем {safeMode.Problems.Count}";
+                _status.ForeColor = safeMode.Verified ? Color.FromArgb(77, 230, 138) : Yellow;
+            }
+            else if (modState.State == VrModState.Disabled)
+            {
+                _status.Text = "VR-мод отключён — активные файлы отсутствуют, проверка пройдена";
+                _status.ForeColor = Color.FromArgb(77, 230, 138);
+            }
+            else if (modState.State == VrModState.Incomplete)
+            {
+                _status.Text = $"Состояние VR-мода неполное: проблем {modState.Problems.Count}";
+                _status.ForeColor = Yellow;
+            }
+            else
+            {
+                _status.Text = installed is null ? "Готово к установке" : $"Установлена и активна версия {installed}";
+                _status.ForeColor = Muted;
+            }
+
+            if (!compatibleVersion)
+            {
+                var warningKey = root + "|" + gameVersion.DetectedVersion + "|" + gameVersion.State;
+                if (!string.Equals(_shownVersionWarningKey, warningKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    _shownVersionWarningKey = warningKey;
+                    MessageBox.Show(this,
+                        "Установка заблокирована из-за несовместимой версии игры.\n\n" + gameVersion.Details +
+                        $"\n\nТребуется Cyberpunk 2077 {GameVersionChecker.SupportedGameVersion}. " +
+                        "Отключение VR, Safe mode и удаление уже установленных модов остаются доступными.",
+                        "Проверка версии Cyberpunk 2077", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { _status.Text = $"Ошибка проверки: {ex.Message}"; }
+    }
+
+    private void Browse(object? sender, EventArgs e)
+    {
+        using var dialog = new FolderBrowserDialog
+        {
+            Description = "Выберите корневую папку Cyberpunk 2077",
+            UseDescriptionForTitle = true,
+            InitialDirectory = Directory.Exists(_pathBox.Text) ? _pathBox.Text : ""
+        };
+        if (dialog.ShowDialog(this) == DialogResult.OK) _pathBox.Text = dialog.SelectedPath;
+    }
+
+    private async Task InstallAsync()
+    {
+        var root = _pathBox.Text.Trim();
+        GameVersionChecker.EnsureCompatible(root);
+        var checks = await Task.Run(() => DependencyChecker.Check(root));
+        var missing = checks.Where(d => !d.Found).Select(d => d.Name).ToArray();
+        var conflicts = _engine.FindConflicts(root);
+        var warnings = new List<string>();
+        if (missing.Length > 0) warnings.Add("Не найдены зависимости:\n• " + string.Join("\n• ", missing));
+        if (conflicts.Count > 0) warnings.Add("Возможные конфликты:\n• " + string.Join("\n• ", conflicts));
+        if (warnings.Count > 0 && MessageBox.Show(this,
+                string.Join("\n\n", warnings) + "\n\nПродолжить установку?",
+                "Требуется внимание", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+            return;
+
+        await RunOperationAsync(() => _engine.Install(root, CreateProgress()), "Установка завершена. Запустите OpenXR/SteamVR, затем игру.");
+    }
+
+    private async Task InstallComponentsAsync()
+    {
+        var root = _pathBox.Text.Trim();
+        GameVersionChecker.EnsureCompatible(root);
+        if (MessageBox.Show(this,
+                "Будут загружены и установлены последние официальные версии восьми компонентов с GitHub:\n\n" +
+                "RED4ext, Cyber Engine Tweaks, redscript, TweakXL, ArchiveXL, Codeware, Equipment-EX и Input Loader.\n\n" +
+                "Продолжить?", "Установка компонентов", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+            return;
+
+        var succeeded = await RunOperationAsync(async () =>
+        {
+            await _componentInstaller.InstallGitHubComponentsAsync(root, CreateProgress());
+        }, "Компоненты GitHub установлены.");
+        if (!succeeded) return;
+
+        var checks = await Task.Run(() => DependencyChecker.Check(root));
+        var nexusMissing = checks.Where(d => !d.Found && ComponentInstaller.NexusComponents.Any(n => d.Name.Contains(n.Name.Split(' ')[0], StringComparison.OrdinalIgnoreCase))).ToArray();
+        if (nexusMissing.Length > 0 && MessageBox.Show(this,
+                "Остались компоненты с Nexus Mods. Открыть их страницы для ручного скачивания?\n\n" +
+                "После скачивания нажмите «Архивы Nexus…» и выберите ZIP, RAR или 7z-файлы.",
+                "Компоненты Nexus", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+        {
+            foreach (var nexus in ComponentInstaller.NexusComponents)
+                Process.Start(new ProcessStartInfo(nexus.Url) { UseShellExecute = true });
+        }
+    }
+
+    private async Task InstallLocalArchivesAsync()
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Выберите скачанные архивы компонентов Nexus",
+            Filter = "Архивы модов (*.zip;*.rar;*.7z)|*.zip;*.rar;*.7z|ZIP (*.zip)|*.zip|RAR (*.rar)|*.rar|7z (*.7z)|*.7z",
+            Multiselect = true,
+            CheckFileExists = true
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        var root = _pathBox.Text.Trim();
+        GameVersionChecker.EnsureCompatible(root);
+        var missingBefore = (await Task.Run(() => DependencyChecker.Check(root)))
+            .Where(d => !d.Found).Select(d => d.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        await RunOperationAsync(() =>
+        {
+            _componentInstaller.InstallLocalArchives(root, dialog.FileNames, CreateProgress());
+            if (missingBefore.Count > 0)
+            {
+                var missingAfter = DependencyChecker.Check(root).Where(d => !d.Found)
+                    .Select(d => d.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                if (missingBefore.SetEquals(missingAfter))
+                    throw new InstallerException("Архив распакован, но ни один отсутствующий компонент не обнаружен. " +
+                        "Для More Occluders нужен файл «More Occluders (Scripted)» версии 0.3 из раздела Optional Files мода №33136.");
+            }
+        },
+            "Выбранные компоненты установлены.");
+    }
+
+    private async Task RemoveAsync()
+    {
+        if (MessageBox.Show(this, "Удалить Cyberpunk VR Port и восстановить заменённые файлы?", "Удаление",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+
+        UninstallResult? result = null;
+        await RunOperationAsync(() => result = _engine.Uninstall(_pathBox.Text.Trim(), CreateProgress()), "Мод удалён.");
+        if (result?.PreservedModifiedFiles.Count > 0)
+            MessageBox.Show(this, "Изменённые после установки файлы оставлены на месте:\n\n" +
+                string.Join("\n", result.PreservedModifiedFiles), "Файлы сохранены", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private async Task ToggleVrAsync()
+    {
+        var root = _pathBox.Text.Trim();
+        var disabled = _engine.IsDisabled(root);
+        var question = disabled
+            ? "Включить VR-мод и вернуть его файлы в папку игры?"
+            : "Отключить только Cyberpunk VR Port?\n\nФайлы будут перемещены в защищённое хранилище и проверены. Общие компоненты останутся активны.";
+        if (MessageBox.Show(this, question, disabled ? "Включение VR" : "Отключение VR",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+        if (disabled)
+            await RunOperationAsync(() => _engine.Enable(root, CreateProgress()), "VR-мод включён и проверен.");
+        else
+            await RunOperationAsync(() => _engine.Disable(root, CreateProgress()),
+                "VR-мод отключён. Проверка подтвердила, что игра не видит его активные файлы.");
+    }
+
+    private async Task ToggleSafeModeAsync()
+    {
+        var root = _pathBox.Text.Trim();
+        var status = _safeModeManager.GetStatus(root);
+        if (status.IsActive)
+        {
+            if (!status.Verified)
+            {
+                if (MessageBox.Show(this,
+                        "Safe mode включён не полностью. Дозаписать новые точки загрузки модов в защищённое хранилище и повторить проверку?",
+                        "Ремонт Safe mode", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+                await RunOperationAsync(() => _safeModeManager.Repair(root, CreateProgress()),
+                    "Safe mode отремонтирован. Проверка подтвердила полное отключение известных загрузчиков модов.");
+                return;
+            }
+            if (MessageBox.Show(this, "Выйти из Safe mode и восстановить все отключённые моды?", "Включение модов",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            await RunOperationAsync(() => _safeModeManager.Deactivate(root, CreateProgress()),
+                "Все файлы модов восстановлены и проверены.");
+        }
+        else
+        {
+            if (MessageBox.Show(this,
+                    "Включить Safe mode для диагностики вылетов?\n\nБудут временно отключены RED4ext, CET, redscript-моды, ArchiveXL-моды и остальные файлы модификаций. Все данные можно восстановить этой же кнопкой.",
+                    "Safe mode", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+            await RunOperationAsync(() => _safeModeManager.Activate(root, CreateProgress()),
+                "Safe mode включён. Проверка подтвердила, что пути загрузки модов недоступны игре.");
+        }
+    }
+
+    private IProgress<InstallProgress> CreateProgress() => new Progress<InstallProgress>(p =>
+    {
+        _progress.Value = Math.Clamp(p.Percent, 0, 100);
+        _status.Text = p.Message;
+    });
+
+    private async Task RunOperationAsync(Action action, string successMessage)
+    {
+        SetBusy(true);
+        try
+        {
+            await Task.Run(action);
+            MessageBox.Show(this, successMessage, "Cyberpunk VR Port", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            SetBusy(false);
+            await RefreshStateAsync();
+        }
+    }
+
+    private async Task<bool> RunOperationAsync(Func<Task> action, string successMessage)
+    {
+        SetBusy(true);
+        var succeeded = false;
+        try
+        {
+            await action();
+            succeeded = true;
+            MessageBox.Show(this, successMessage, "Cyberpunk VR Port", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            SetBusy(false);
+            await RefreshStateAsync();
+        }
+        return succeeded;
+    }
+
+    private void SetBusy(bool busy)
+    {
+        _pathBox.Enabled = !busy;
+        _browseButton.Enabled = !busy;
+        _refreshButton.Enabled = !busy;
+        _componentsButton.Enabled = !busy;
+        _archivesButton.Enabled = !busy;
+        _installButton.Enabled = !busy;
+        _removeButton.Enabled = !busy;
+        _toggleVrButton.Enabled = !busy;
+        _safeModeButton.Enabled = !busy;
+        UseWaitCursor = busy;
+        if (!busy) _progress.Value = 0;
+    }
+
+    private static void StyleTextBox(TextBox box)
+    {
+        box.BackColor = Color.FromArgb(27, 34, 44);
+        box.ForeColor = Color.White;
+        box.BorderStyle = BorderStyle.FixedSingle;
+        box.Font = new Font("Consolas", 10F);
+        box.AutoSize = false;
+    }
+
+    private static void StyleButton(CyberButton button, string text, bool primary)
+    {
+        button.Text = text;
+        button.Primary = primary;
+        button.Font = new Font("Segoe UI Semibold", 9F);
+        button.Cursor = Cursors.Hand;
+        button.Margin = new Padding(5, 3, 0, 3);
+    }
+
+    private void ShowLicense()
+    {
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ThirdPartyNotices.txt");
+        using var reader = stream is null ? null : new StreamReader(stream);
+        var notices = reader?.ReadToEnd() ?? "Текст лицензии не найден.";
+        using var sevenZipStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("SevenZipLicense.txt");
+        using var sevenZipReader = sevenZipStream is null ? null : new StreamReader(sevenZipStream);
+        if (sevenZipReader is not null) notices += "\n\n---------------- 7-Zip ----------------\n\n" + sevenZipReader.ReadToEnd();
+        MessageBox.Show(this, notices,
+            "Лицензия CyberpunkVR Port", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+}
+
+internal sealed class CyberButton : Button
+{
+    private bool _hovered;
+    private bool _primary;
+
+    public bool Primary
+    {
+        get => _primary;
+        set { _primary = value; Invalidate(); }
+    }
+
+    public CyberButton()
+    {
+        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                 ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+        FlatStyle = FlatStyle.Flat;
+        FlatAppearance.BorderSize = 0;
+        TabStop = true;
+    }
+
+    protected override void OnMouseEnter(EventArgs e)
+    {
+        base.OnMouseEnter(e);
+        _hovered = true;
+        Invalidate();
+    }
+
+    protected override void OnMouseLeave(EventArgs e)
+    {
+        base.OnMouseLeave(e);
+        _hovered = false;
+        Invalidate();
+    }
+
+    protected override void OnEnabledChanged(EventArgs e)
+    {
+        base.OnEnabledChanged(e);
+        Cursor = Enabled ? Cursors.Hand : Cursors.Default;
+        Invalidate();
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        e.Graphics.Clear(Parent?.BackColor ?? Color.Black);
+        var bounds = new Rectangle(0, 0, Width - 1, Height - 1);
+        Color fill;
+        Color border;
+        Color text;
+
+        if (!Enabled)
+        {
+            fill = Color.FromArgb(22, 27, 34);
+            border = Color.FromArgb(55, 63, 72);
+            text = Color.FromArgb(101, 110, 120);
+        }
+        else if (Primary)
+        {
+            fill = _hovered ? Color.FromArgb(255, 235, 72) : Color.FromArgb(255, 224, 0);
+            border = fill;
+            text = Color.FromArgb(9, 12, 16);
+        }
+        else
+        {
+            fill = _hovered ? Color.FromArgb(25, 47, 56) : Color.FromArgb(18, 24, 31);
+            border = Color.FromArgb(0, 222, 239);
+            text = Color.White;
+        }
+
+        using var fillBrush = new SolidBrush(fill);
+        using var borderPen = new Pen(border);
+        e.Graphics.FillRectangle(fillBrush, bounds);
+        e.Graphics.DrawRectangle(borderPen, bounds);
+        TextRenderer.DrawText(e.Graphics, Text, Font, bounds, text,
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+
+        if (Focused && Enabled)
+        {
+            var focus = Rectangle.Inflate(bounds, -4, -4);
+            ControlPaint.DrawFocusRectangle(e.Graphics, focus, text, fill);
+        }
+    }
+}
+
+internal sealed class CyberProgressBar : Control
+{
+    private int _value;
+
+    public int Value
+    {
+        get => _value;
+        set
+        {
+            _value = Math.Clamp(value, 0, 100);
+            Invalidate();
+        }
+    }
+
+    public CyberProgressBar()
+    {
+        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                 ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+        Height = 8;
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        var bounds = new Rectangle(0, 0, Width - 1, Height - 1);
+        using var background = new SolidBrush(Color.FromArgb(28, 35, 44));
+        using var border = new Pen(Color.FromArgb(49, 60, 72));
+        e.Graphics.FillRectangle(background, bounds);
+        e.Graphics.DrawRectangle(border, bounds);
+        if (Value > 0)
+        {
+            var fillWidth = Math.Max(1, (int)((Width - 2) * Value / 100d));
+            using var fill = new SolidBrush(Color.FromArgb(0, 225, 241));
+            e.Graphics.FillRectangle(fill, 1, 1, fillWidth, Math.Max(1, Height - 2));
+        }
+    }
+}
+

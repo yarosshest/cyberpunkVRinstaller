@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>CyberpunkVRPortInstaller</AssemblyName>
+    <RootNamespace>CyberpunkVRInstaller</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>0.1.9</Version>
+    <FileVersion>0.1.9.0</FileVersion>
+    <AssemblyVersion>0.1.9.0</AssemblyVersion>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="vendor\CyberpunkVRPort-0.1.9.zip" LogicalName="CyberpunkVRPort.Payload.zip" />
+    <EmbeddedResource Include="THIRD-PARTY-NOTICES.txt" LogicalName="ThirdPartyNotices.txt" />
+    <EmbeddedResource Include="vendor\7zip\7z.exe" LogicalName="SevenZip.exe" />
+    <EmbeddedResource Include="vendor\7zip\7z.dll" LogicalName="SevenZip.dll" />
+    <EmbeddedResource Include="vendor\7zip\License.txt" LogicalName="SevenZipLicense.txt" />
+  </ItemGroup>
+</Project>
+

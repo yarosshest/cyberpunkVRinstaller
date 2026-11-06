@@ -1,0 +1,55 @@
+name: Ошибка установщика
+description: Сообщить о проблеме установки, удаления, Safe Mode или интерфейса
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Не прикладывайте сохранения и полный `.dmp`, если их не запросили отдельно.
+  - type: input
+    id: installer-version
+    attributes:
+      label: Версия установщика
+      placeholder: 0.1.9 / FIX 2
+    validations:
+      required: true
+  - type: input
+    id: game-version
+    attributes:
+      label: Версия Cyberpunk 2077
+      placeholder: 2.5, Steam/GOG/Epic
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Раздел
+      options:
+        - Установка VR-порта
+        - Установка компонентов
+        - Архивы Nexus
+        - Safe Mode
+        - Отключение или удаление
+        - Интерфейс
+        - Другое
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги воспроизведения
+      placeholder: Что было нажато и что произошло?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемый результат
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Журналы и дополнительная информация
+      description: Перетащите report.txt/stacktrace.txt или вставьте небольшой фрагмент журнала.
+

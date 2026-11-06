@@ -1,0 +1,15 @@
+bin/
+obj/
+dist/
+.dotnet-home/
+.selftest-*/
+.vs/
+.idea/
+TestResults/
+artifacts/
+*.log
+*.user
+*.suo
+*.DotSettings.user
+
+
