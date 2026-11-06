@@ -1,55 +1,55 @@
-name: Ошибка установщика
-description: Сообщить о проблеме установки, удаления, Safe Mode или интерфейса
+name: Installer bug
+description: Report an installation, removal, Safe Mode, or UI problem
 title: "[Bug]: "
 labels: [bug]
 body:
   - type: markdown
     attributes:
-      value: Не прикладывайте сохранения и полный `.dmp`, если их не запросили отдельно.
+      value: Do not attach save files or a complete `.dmp` unless requested.
   - type: input
     id: installer-version
     attributes:
-      label: Версия установщика
+      label: Installer version
       placeholder: 0.1.9 / FIX 2
     validations:
       required: true
   - type: input
     id: game-version
     attributes:
-      label: Версия Cyberpunk 2077
+      label: Cyberpunk 2077 version
       placeholder: 2.5, Steam/GOG/Epic
     validations:
       required: true
   - type: dropdown
     id: area
     attributes:
-      label: Раздел
+      label: Area
       options:
-        - Установка VR-порта
-        - Установка компонентов
-        - Архивы Nexus
+        - VR port installation
+        - Component installation
+        - Nexus archives
         - Safe Mode
-        - Отключение или удаление
-        - Интерфейс
-        - Другое
+        - Disable or removal
+        - User interface
+        - Other
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Шаги воспроизведения
-      placeholder: Что было нажато и что произошло?
+      label: Reproduction steps
+      placeholder: What did you select, and what happened?
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: Ожидаемый результат
+      label: Expected result
     validations:
       required: true
   - type: textarea
     id: logs
     attributes:
-      label: Журналы и дополнительная информация
-      description: Перетащите report.txt/stacktrace.txt или вставьте небольшой фрагмент журнала.
+      label: Logs and additional information
+      description: Attach report.txt/stacktrace.txt or paste a short log excerpt.
 

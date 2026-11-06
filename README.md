@@ -1,116 +1,117 @@
 # Cyberpunk VR Port Installer
 
+**English** | [Русский](README_RU.md)
+
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)
 ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)
 ![Cyberpunk 2077](https://img.shields.io/badge/Cyberpunk%202077-2.5-FCEE0C?labelColor=111820)
 ![License](https://img.shields.io/badge/license-MIT-00ECFF)
 
-Неофициальный автономный Windows-инсталлятор для
+An unofficial, self-contained Windows installer for
 [Cyberpunk VR Port 0.1.9](https://github.com/dariulone/cyberpunk-vr-port/releases/tag/0.1.9).
-Он устанавливает VR-порт, проверяет совместимость игры, помогает поставить зависимости и умеет
-безопасно отключать моды для диагностики вылетов.
+It installs the VR port, validates game compatibility, helps install dependencies, and can safely
+disable mods while troubleshooting crashes.
 
 > [!IMPORTANT]
-> Эта ветка установщика намеренно закреплена на Cyberpunk VR Port 0.1.9 и Cyberpunk 2077 2.5.
-> Более новые версии исходного VR-порта могут иметь другую структуру и требования.
+> This installer branch is intentionally pinned to Cyberpunk VR Port 0.1.9 and Cyberpunk 2077 2.5.
+> Newer upstream releases may use a different layout and have different requirements.
 
-## Возможности
+## Features
 
-- поиск Cyberpunk 2077 в Steam, GOG и Epic Games;
-- проверка версии `Cyberpunk2077.exe` при запуске;
-- автономная установка официального архива VR Port 0.1.9;
-- установка RED4ext, CET, redscript, ArchiveXL, TweakXL, Codeware, Equipment-EX и Input Loader;
-- установка вручную загруженных архивов Nexus Mods в форматах ZIP, RAR и 7z;
-- резервное копирование заменяемых файлов и безопасное удаление VR-порта;
-- отдельное отключение только VR-порта;
-- проверяемый Safe Mode для временного отключения загрузчиков и каталогов модов;
-- восстановление файлов после Safe Mode с проверкой результата;
-- защита от установки в неправильную папку или при запущенной игре.
+- detects Cyberpunk 2077 installations from Steam, GOG, and Epic Games;
+- checks the `Cyberpunk2077.exe` version at startup;
+- installs the official VR Port 0.1.9 archive without downloading it at runtime;
+- installs RED4ext, CET, redscript, ArchiveXL, TweakXL, Codeware, Equipment-EX, and Input Loader;
+- installs manually downloaded Nexus Mods archives in ZIP, RAR, and 7z formats;
+- backs up replaced files and safely removes the VR port;
+- disables only the VR port while leaving shared components installed;
+- provides a verified Safe Mode that temporarily disables mod loaders and mod directories;
+- restores Safe Mode files and verifies the result;
+- refuses to install into an invalid folder or while the game is running.
 
-## Быстрый старт
+## Quick start
 
-1. Скачайте `CyberpunkVRPortInstaller-0.1.9.exe` на странице [Releases](../../releases).
-2. Закройте Cyberpunk 2077 и запустите установщик от имени администратора.
-3. Убедитесь, что определена правильная папка игры и отображается версия 2.5.
-4. Нажмите **«Установить компоненты»**, затем добавьте необходимые архивы Nexus.
-5. Нажмите **«Установить»**.
-6. Запустите OpenXR/SteamVR и затем Cyberpunk 2077.
+1. Download `CyberpunkVRPortInstaller-0.1.9.exe` from [Releases](../../releases).
+2. Close Cyberpunk 2077 and run the installer as administrator.
+3. Verify that the correct game directory and version 2.5 are displayed.
+4. Select **Install components**, then add the required Nexus archives.
+5. Select **Install**.
+6. Start OpenXR/SteamVR, then launch Cyberpunk 2077.
 
-Установщик не включает игру, платные материалы или файлы Nexus Mods.
+The installer does not include the game, paid content, or Nexus Mods files.
 
-## Компоненты Nexus Mods
+## Nexus Mods components
 
-Visual Holsters, Nova Optics и
+Visual Holsters, Nova Optics, and
 [More Occluders](https://www.nexusmods.com/cyberpunk2077/mods/33136?tab=files)
-нужно скачать вручную. После загрузки выберите архивы кнопкой **«Архивы Nexus…»**.
+must be downloaded manually. After downloading them, select the archives with **Nexus archives…**.
 
-Для More Occluders требуется **More Occluders (Scripted) v0.3** из раздела **Optional Files**.
-После установки должен существовать файл `r6\scripts\MoreOccluders.reds`.
+More Occluders requires **More Occluders (Scripted) v0.3** from the **Optional Files** section.
+After installation, `r6\scripts\MoreOccluders.reds` must exist.
 
 ## Safe Mode
 
-Safe Mode временно переносит в защищённое хранилище:
+Safe Mode temporarily moves the following items into protected storage:
 
-- `archive\pc\mod`, `mods`, `r6\scripts`, `r6\tweaks`, `r6\input`;
-- `red4ext\plugins` и `bin\x64\plugins`;
-- RED4ext/CET и известные proxy-DLL;
+- `archive\pc\mod`, `mods`, `r6\scripts`, `r6\tweaks`, and `r6\input`;
+- `red4ext\plugins` and `bin\x64\plugins`;
+- RED4ext/CET and known proxy DLLs;
 - `openvr_api.dll`.
 
-Повторное нажатие **«Включить моды»** возвращает всё на прежние места. Переключать режим можно
-только при закрытой игре. Подробная диагностика описана в
-[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+Selecting **Enable mods** restores everything to its original location. The game must be closed before
+switching modes. See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for detailed diagnostics.
 
 > [!NOTE]
-> Сохранение, созданное с модами, может не загрузиться в Safe Mode. Для чистого теста начните новую
-> игру или используйте сохранение, которое не зависит от отключённых модов.
+> A save created with mods may not load in Safe Mode. For a clean test, start a new game or use a save
+> that does not depend on disabled mods.
 
-## Требования
+## Requirements
 
 - Windows 10/11 x64;
-- Cyberpunk 2077 версии 2.5;
-- .NET не требуется для запуска готового EXE: runtime включён в сборку;
-- интернет нужен только для автоматической загрузки компонентов;
-- права администратора нужны для записи в папку игры.
+- Cyberpunk 2077 version 2.5;
+- no separate .NET installation for the published EXE—the runtime is bundled;
+- internet access only for automatic component downloads;
+- administrator privileges to write into the game directory.
 
-## Сборка из исходников
+## Building from source
 
-Понадобится .NET SDK 8 или новее. Репозиторий содержит закреплённый официальный архив VR-порта и
-минимальный runtime 7-Zip с лицензией.
+.NET SDK 8 or newer is required. The repository contains the pinned official VR port archive and a
+minimal licensed 7-Zip runtime.
 
 ```powershell
 pwsh ./build.ps1
 ```
 
-Результат: `dist/CyberpunkVRPortInstaller-0.1.9.exe`.
+Output: `dist/CyberpunkVRPortInstaller-0.1.9.exe`.
 
-Локальная проверка без изменения установленной игры:
+Run the local self-test without modifying an installed game:
 
 ```powershell
 dotnet ./bin/Release/net8.0-windows/win-x64/CyberpunkVRPortInstaller.dll --self-test
 ```
 
-GitHub Actions проверяет проект при каждом push/PR. Тег `v*` собирает тот же EXE и прикладывает его
-к GitHub Release.
+GitHub Actions validates every push and pull request. A `v*` tag builds the same EXE and attaches it
+to a GitHub Release.
 
-## Безопасность и данные
+## Security and data
 
-Установщик не собирает телеметрию и не отправляет пользовательские данные. Сетевые запросы нужны для
-GitHub Releases и открытия официальных страниц Nexus Mods. Изменяемые файлы игры резервируются внутри
-папки Cyberpunk 2077.
+The installer does not collect telemetry or upload user data. Network requests are used for GitHub
+Releases and for opening official Nexus Mods pages. Modified game files are backed up inside the
+Cyberpunk 2077 directory.
 
-Перед экспериментами с модами рекомендуется отдельно сохранить папку
-`%USERPROFILE%\Saved Games\CD Projekt Red\Cyberpunk 2077`.
+Before experimenting with mods, back up
+`%USERPROFILE%\Saved Games\CD Projekt Red\Cyberpunk 2077` separately.
 
-## Участие в разработке
+## Contributing
 
-См. [CONTRIBUTING.md](CONTRIBUTING.md). В отчётах о вылетах не публикуйте персональные данные и полный
-дамп без необходимости; обычно достаточно `report.txt`, `stacktrace.txt` и журнала VR-порта.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Do not publish personal data or a complete memory dump in crash
+reports unless necessary; `report.txt`, `stacktrace.txt`, and the VR port log are usually sufficient.
 
-## Лицензии и отказ от ответственности
+## Licenses and disclaimer
 
-Код установщика распространяется по лицензии [MIT](LICENSE). Лицензии встроенных компонентов указаны
-в [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) и `vendor/7zip/License.txt`.
+The installer source code is available under the [MIT License](LICENSE). Embedded component licenses
+are listed in [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) and `vendor/7zip/License.txt`.
 
-Проект не связан с CD PROJEKT RED, Valve, Meta, Nexus Mods или авторами Cyberpunk VR Port.
-Cyberpunk 2077 и связанные товарные знаки принадлежат их правообладателям. Используйте моды на свой риск.
+This project is not affiliated with CD PROJEKT RED, Valve, Meta, Nexus Mods, or the Cyberpunk VR Port
+authors. Cyberpunk 2077 and related trademarks belong to their respective owners. Use mods at your own risk.
 

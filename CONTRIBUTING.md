@@ -1,14 +1,16 @@
-# Участие в разработке
+# Contributing
 
-Спасибо за помощь проекту.
+**English** | [Русский](CONTRIBUTING_RU.md)
 
-## Перед началом
+Thank you for helping improve the project.
 
-1. Создайте issue с описанием ошибки или предлагаемого изменения.
-2. Не добавляйте в репозиторий игру, сохранения, crash dump и архивы Nexus Mods.
-3. Не обновляйте встроенный VR Port без отдельного обсуждения: версия 0.1.9 закреплена намеренно.
+## Before you begin
 
-## Локальная проверка
+1. Open an issue describing the bug or proposed change.
+2. Do not commit the game, save files, crash dumps, or Nexus Mods archives.
+3. Do not update the embedded VR Port without prior discussion: version 0.1.9 is intentionally pinned.
+
+## Local validation
 
 ```powershell
 dotnet restore --runtime win-x64
@@ -17,14 +19,14 @@ dotnet ./bin/Release/net8.0-windows/win-x64/CyberpunkVRPortInstaller.dll --self-
 pwsh ./build.ps1
 ```
 
-## Правила изменений
+## Change requirements
 
-- сохраняйте совместимость с Windows 10/11 x64;
-- операции с файлами должны быть обратимыми и проверяться после выполнения;
-- не удаляйте пользовательские файлы без manifest или резервной копии;
-- новые загрузки должны использовать HTTPS и официальный источник;
-- не выводите токены, пути с персональными данными или содержимое сохранений в журнал;
-- добавляйте self-test для новой логики установки и восстановления.
+- preserve Windows 10/11 x64 compatibility;
+- make file operations reversible and verify them after completion;
+- never remove user files without a manifest or backup;
+- use HTTPS and an official source for new downloads;
+- never log tokens, personal paths, or save-file contents;
+- add a self-test for new installation and restoration logic.
 
-В pull request опишите проблему, решение, способ проверки и пользовательские риски.
+In a pull request, describe the problem, solution, validation steps, and user-facing risks.
 

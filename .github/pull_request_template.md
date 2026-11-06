@@ -1,15 +1,15 @@
-## Что изменено
+## What changed
 
-Опишите изменение и связанную проблему.
+Describe the change and the related problem.
 
-## Проверка
+## Validation
 
 - [ ] `dotnet build --configuration Release --runtime win-x64`
-- [ ] `--self-test` проходит успешно
-- [ ] `pwsh ./build.ps1` создаёт `CyberpunkVRPortInstaller-0.1.9.exe`
-- [ ] Операции с файлами обратимы и не затрагивают данные вне папки игры
+- [ ] `--self-test` passes
+- [ ] `pwsh ./build.ps1` creates `CyberpunkVRPortInstaller-0.1.9.exe`
+- [ ] File operations are reversible and do not affect data outside the game directory
 
-## Риски
+## Risks
 
-Опишите влияние на установку, удаление, резервные копии и существующий Safe Mode.
+Describe the impact on installation, removal, backups, and existing Safe Mode state.
 

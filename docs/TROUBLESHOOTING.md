@@ -1,44 +1,46 @@
-# Диагностика
+# Troubleshooting
 
-## Игра не найдена
+**English** | [Русский](TROUBLESHOOTING_RU.md)
 
-Нажмите **«Обзор…»** и выберите корневую папку Cyberpunk 2077. В ней должен находиться файл
+## Game not detected
+
+Select **Browse…** and choose the Cyberpunk 2077 root directory. It must contain
 `bin\x64\Cyberpunk2077.exe`.
 
-## Несовместимая версия
+## Incompatible game version
 
-Cyberpunk VR Port 0.1.9 рассчитан на Cyberpunk 2077 2.5. Не обходите проверку: нативный плагин
-использует адреса конкретной сборки.
+Cyberpunk VR Port 0.1.9 targets Cyberpunk 2077 2.5. Do not bypass the version check: the native plugin
+uses addresses from a specific game build.
 
-## Вылет после установки
+## Crash after installation
 
-1. Закройте игру.
-2. Запустите установщик от имени администратора.
-3. Включите **Safe Mode** и дождитесь зелёной проверки.
-4. Запустите новую игру, не используя модифицированное сохранение.
+1. Close the game.
+2. Run the installer as administrator.
+3. Enable **Safe Mode** and wait for the green verification message.
+4. Start a new game instead of loading a modded save.
 
-Если новая игра работает, возвращайте моды группами, пока не найдётся конфликт. Сохранения с отметкой
-`isModded` могут не загружаться при отключённых модах.
+If a new game works, restore mods in groups until the conflict is identified. Saves marked `isModded`
+may fail to load while their required mods are disabled.
 
 ## Watchdog timeout
 
-Сообщение `Watchdog timeout! (120 seconds)` означает, что основной игровой цикл не отвечал две минуты.
-Это не обязательно падение DLL. Если отчёт содержит `IsLoadingSavedSession=true`, проверьте новую игру
-и более раннее сохранение.
+`Watchdog timeout! (120 seconds)` means that the main game loop did not respond for two minutes. It is
+not necessarily a DLL crash. If the report contains `IsLoadingSavedSession=true`, test a new game and
+an earlier save.
 
-## More Occluders не определяется
+## More Occluders is not detected
 
-Установите **More Occluders (Scripted) v0.3** из Optional Files. Поддерживаются ZIP, RAR и 7z.
-Ожидаемый файл: `r6\scripts\MoreOccluders.reds`.
+Install **More Occluders (Scripted) v0.3** from Optional Files. ZIP, RAR, and 7z are supported.
+Expected file: `r6\scripts\MoreOccluders.reds`.
 
-## Какие файлы приложить к issue
+## Files to attach to an issue
 
-- скриншот окна установщика;
-- `report.txt` и `stacktrace.txt` из `%LOCALAPPDATA%\REDEngine\ReportQueue`;
-- `bin\x64\cyberpunkvrport.log`, если он существует;
-- точные версии игры, установщика и компонентов;
-- указание, воспроизводится ли ошибка в Safe Mode и в новой игре.
+- a screenshot of the installer;
+- `report.txt` and `stacktrace.txt` from `%LOCALAPPDATA%\REDEngine\ReportQueue`;
+- `bin\x64\cyberpunkvrport.log`, if present;
+- exact game, installer, and component versions;
+- whether the problem occurs in Safe Mode and in a new game.
 
-Не публикуйте `Cyberpunk2077.dmp` и сохранения без необходимости: они могут содержать чувствительные
-данные и имеют большой размер.
+Do not publish `Cyberpunk2077.dmp` or save files unless necessary. They are large and may contain
+sensitive data.
 

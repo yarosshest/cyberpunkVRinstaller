@@ -1,17 +1,19 @@
 # Changelog
 
-Все заметные изменения проекта перечисляются в этом файле.
+**English** | [Русский](CHANGELOG_RU.md)
+
+All notable project changes are documented in this file.
 
 ## [0.1.9] - 2026-11-06
 
-### Добавлено
+### Added
 
-- автономная установка Cyberpunk VR Port 0.1.9;
-- поиск Steam/GOG/Epic и проверка Cyberpunk 2077 2.5;
-- установка GitHub- и Nexus-компонентов, включая RAR/7z;
-- резервное копирование, удаление и восстановление файлов;
-- отдельное отключение VR-порта;
-- проверяемый Safe Mode для RED4ext, CET, REDmod, ASI/OpenVR и script/archive-модов;
-- ремонт manifest старой версии Safe Mode;
-- встроенная самопроверка установки, отключения и восстановления.
+- self-contained Cyberpunk VR Port 0.1.9 installation;
+- Steam/GOG/Epic detection and Cyberpunk 2077 2.5 validation;
+- GitHub and Nexus component installation, including RAR/7z support;
+- backup, removal, and file restoration workflows;
+- a separate VR-port disable mode;
+- verified Safe Mode for RED4ext, CET, REDmod, ASI/OpenVR, script, and archive mods;
+- repair support for manifests created by older Safe Mode versions;
+- built-in self-tests for installation, disabling, and restoration.
 

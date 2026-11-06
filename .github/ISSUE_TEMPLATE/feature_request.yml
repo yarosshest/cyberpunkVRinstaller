@@ -1,22 +1,22 @@
-name: Предложение
-description: Предложить улучшение установщика
+name: Feature request
+description: Suggest an installer improvement
 title: "[Feature]: "
 labels: [enhancement]
 body:
   - type: textarea
     id: problem
     attributes:
-      label: Какую проблему решает предложение?
+      label: What problem would this solve?
     validations:
       required: true
   - type: textarea
     id: solution
     attributes:
-      label: Предлагаемое решение
+      label: Proposed solution
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: Альтернативы
+      label: Alternatives
 
