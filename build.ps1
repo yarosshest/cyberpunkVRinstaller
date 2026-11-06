@@ -37,6 +37,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed with exit code $LASTEXITCODE"
 }
 
+New-Item -ItemType Directory -Path $output -Force | Out-Null
 $published = Join-Path $publishOutput 'CyberpunkVRPortInstaller.exe'
 $versioned = Join-Path $output 'CyberpunkVRPortInstaller-0.2.2.exe'
 Copy-Item -LiteralPath $published -Destination $versioned -Force
