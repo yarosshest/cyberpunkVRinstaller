@@ -38,7 +38,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $published = Join-Path $publishOutput 'CyberpunkVRPortInstaller.exe'
-$versioned = Join-Path $output 'CyberpunkVRPortInstaller-0.1.9.exe'
+$versioned = Join-Path $output 'CyberpunkVRPortInstaller-0.2.2.exe'
 Copy-Item -LiteralPath $published -Destination $versioned -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'THIRD-PARTY-NOTICES.txt') -Destination $output -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'vendor\7zip\License.txt') -Destination (Join-Path $output '7ZIP-LICENSE.txt') -Force

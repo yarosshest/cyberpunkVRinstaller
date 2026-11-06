@@ -38,11 +38,12 @@ internal sealed class ComponentInstaller
             var end = (int)(100d * (index + 1) / Components.Length);
             var range = end - start;
             var downloadRange = Math.Max(1, range * 2 / 3);
-            progress?.Report(new(start, $"Получение информации: {component.Name}…"));
+            progress?.Report(new(start, L.T($"Получение информации: {component.Name}…", $"Getting release information: {component.Name}…")));
 
             var release = await GetLatestReleaseAsync(client, component.Repository, cancellationToken);
             var asset = release.Assets.FirstOrDefault(a => component.AssetFilter(a.Name))
-                ?? throw new InstallerException($"Для {component.Name} не найден подходящий ZIP в релизе {release.TagName}.");
+                ?? throw new InstallerException(L.T($"Для {component.Name} не найден подходящий ZIP в релизе {release.TagName}.",
+                    $"No suitable ZIP was found for {component.Name} in release {release.TagName}."));
 
             var temporary = Path.Combine(Path.GetTempPath(), $"cpvr-{Guid.NewGuid():N}.zip");
             try
@@ -59,7 +60,7 @@ internal sealed class ComponentInstaller
             }
         }
 
-        progress?.Report(new(100, "Компоненты GitHub установлены"));
+        progress?.Report(new(100, L.T("Компоненты GitHub установлены", "GitHub components installed")));
         return new ComponentInstallResult(installed);
     }
 
@@ -73,14 +74,16 @@ internal sealed class ComponentInstaller
         {
             var path = archives[i];
             if (!IsSupportedArchive(path))
-                throw new InstallerException($"Поддерживаются архивы ZIP, RAR и 7z. Не удалось открыть: {Path.GetFileName(path)}");
+                throw new InstallerException(L.T($"Поддерживаются архивы ZIP, RAR и 7z. Не удалось открыть: {Path.GetFileName(path)}",
+                    $"ZIP, RAR, and 7z archives are supported. Could not open: {Path.GetFileName(path)}"));
             var installPath = path;
             string? convertedArchive = null;
             try
             {
                 if (!path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                 {
-                    progress?.Report(new((int)(100d * i / archives.Count), $"Распаковка {Path.GetFileName(path)}…"));
+                    progress?.Report(new((int)(100d * i / archives.Count),
+                        L.T($"Распаковка {Path.GetFileName(path)}…", $"Extracting {Path.GetFileName(path)}…")));
                     convertedArchive = ConvertToZip(path);
                     installPath = convertedArchive;
                 }
@@ -94,7 +97,7 @@ internal sealed class ComponentInstaller
                 try { if (convertedArchive is not null && File.Exists(convertedArchive)) File.Delete(convertedArchive); } catch { }
             }
         }
-        progress?.Report(new(100, "Локальные компоненты установлены"));
+        progress?.Report(new(100, L.T("Локальные компоненты установлены", "Local components installed")));
         return new ComponentInstallResult(installed);
     }
 
@@ -108,7 +111,9 @@ internal sealed class ComponentInstaller
 
         using var archive = ZipFile.OpenRead(archivePath);
         var fileEntries = archive.Entries.Where(e => !string.IsNullOrEmpty(e.Name)).ToArray();
-        if (fileEntries.Length == 0) throw new InstallerException($"Архив {Path.GetFileName(archivePath)} не содержит файлов.");
+        if (fileEntries.Length == 0) throw new InstallerException(L.T(
+            $"Архив {Path.GetFileName(archivePath)} не содержит файлов.",
+            $"Archive {Path.GetFileName(archivePath)} contains no files."));
         var prefix = FindWrapperPrefix(fileEntries.Select(e => e.FullName));
 
         try
@@ -160,7 +165,8 @@ internal sealed class ComponentInstaller
     {
         using var response = await client.GetAsync($"https://api.github.com/repos/{repository}/releases/latest", token);
         if ((int)response.StatusCode == 403)
-            throw new InstallerException("GitHub временно ограничил количество запросов. Подождите и повторите установку.");
+            throw new InstallerException(L.T("GitHub временно ограничил количество запросов. Подождите и повторите установку.",
+                "GitHub temporarily rate-limited requests. Wait and try the installation again."));
         response.EnsureSuccessStatusCode();
         using var stream = await response.Content.ReadAsStreamAsync(token);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: token);
@@ -193,7 +199,8 @@ internal sealed class ComponentInstaller
             if (percent != lastReportedPercent)
             {
                 lastReportedPercent = percent;
-                progress?.Report(new(percent, $"Загрузка {name}: {total / 1024d / 1024d:F1} МБ"));
+                progress?.Report(new(percent, L.T($"Загрузка {name}: {total / 1024d / 1024d:F1} МБ",
+                    $"Downloading {name}: {total / 1024d / 1024d:F1} MB")));
             }
         }
     }
@@ -227,7 +234,7 @@ internal sealed class ComponentInstaller
             normalized = normalized[prefix.Length..];
         var relative = normalized.Replace('/', Path.DirectorySeparatorChar);
         if (Path.IsPathRooted(relative) || relative.Split(Path.DirectorySeparatorChar).Any(p => p == ".."))
-            throw new InstallerException($"Недопустимый путь в архиве: {entryName}");
+            throw new InstallerException(L.T($"Недопустимый путь в архиве: {entryName}", $"Invalid archive path: {entryName}"));
         return relative;
     }
 
@@ -261,14 +268,18 @@ internal sealed class ComponentInstaller
             startInfo.ArgumentList.Add("-bd");
             startInfo.ArgumentList.Add("-o" + extractRoot);
             startInfo.ArgumentList.Add(archivePath);
-            using var process = Process.Start(startInfo) ?? throw new InstallerException("Не удалось запустить встроенный распаковщик 7-Zip.");
+            using var process = Process.Start(startInfo) ?? throw new InstallerException(L.T(
+                "Не удалось запустить встроенный распаковщик 7-Zip.", "Could not start the bundled 7-Zip extractor."));
             var output = process.StandardOutput.ReadToEnd();
             var error = process.StandardError.ReadToEnd();
             process.WaitForExit();
             if (process.ExitCode != 0)
-                throw new InstallerException($"7-Zip не смог распаковать {Path.GetFileName(archivePath)} (код {process.ExitCode}).\n{error}\n{output}");
+                throw new InstallerException(L.T(
+                    $"7-Zip не смог распаковать {Path.GetFileName(archivePath)} (код {process.ExitCode}).\n{error}\n{output}",
+                    $"7-Zip could not extract {Path.GetFileName(archivePath)} (code {process.ExitCode}).\n{error}\n{output}"));
             if (!Directory.EnumerateFiles(extractRoot, "*", SearchOption.AllDirectories).Any())
-                throw new InstallerException($"Архив {Path.GetFileName(archivePath)} не содержит файлов.");
+                throw new InstallerException(L.T($"Архив {Path.GetFileName(archivePath)} не содержит файлов.",
+                    $"Archive {Path.GetFileName(archivePath)} contains no files."));
             ZipFile.CreateFromDirectory(extractRoot, zipPath, CompressionLevel.NoCompression, false);
             return zipPath;
         }
@@ -286,7 +297,8 @@ internal sealed class ComponentInstaller
     private static void ExtractResource(string resourceName, string destination)
     {
         using var source = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)
-            ?? throw new InstallerException($"В инсталляторе отсутствует ресурс {resourceName}.");
+            ?? throw new InstallerException(L.T($"В инсталляторе отсутствует ресурс {resourceName}.",
+                $"The installer is missing resource {resourceName}."));
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         using var target = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None);
         source.CopyTo(target);
@@ -297,7 +309,8 @@ internal sealed class ComponentInstaller
         var fullRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         var fullPath = Path.GetFullPath(Path.Combine(root, relative));
         if (!fullPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
-            throw new InstallerException($"Путь выходит за пределы папки игры: {relative}");
+            throw new InstallerException(L.T($"Путь выходит за пределы папки игры: {relative}",
+                $"Path escapes the game folder: {relative}"));
         return fullPath;
     }
 
@@ -332,9 +345,11 @@ internal sealed class ComponentInstaller
     private static void EnsureGameRoot(string gameRoot)
     {
         if (!GameLocator.IsGameRoot(gameRoot))
-            throw new InstallerException("Сначала выберите корректную папку Cyberpunk 2077.");
+            throw new InstallerException(L.T("Сначала выберите корректную папку Cyberpunk 2077.",
+                "Select a valid Cyberpunk 2077 folder first."));
         if (Process.GetProcessesByName("Cyberpunk2077").Length > 0)
-            throw new InstallerException("Cyberpunk 2077 запущен. Закройте игру перед установкой компонентов.");
+            throw new InstallerException(L.T("Cyberpunk 2077 запущен. Закройте игру перед установкой компонентов.",
+                "Cyberpunk 2077 is running. Close the game before installing components."));
     }
 
     private sealed record GitHubRelease(string TagName, IReadOnlyList<GitHubAsset> Assets);

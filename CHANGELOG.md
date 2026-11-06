@@ -8,11 +8,12 @@ All notable project changes are documented in this file.
 
 ### Changed
 
+- added a persistent English/Russian UI switch and localized installer, Safe Mode, status, dialog, and error messages;
 - updated the embedded Cyberpunk VR Port payload from 0.1.9 to 0.2.2;
 - reduced required components to RED4ext 1.31.0 or newer;
 - added migration and backup handling for the old 0.1.9 layout;
 - added verified payload download for source and CI builds;
-- retained the requested release filename `CyberpunkVRPortInstaller-0.1.9.exe`.
+- aligned the installer version and release filename with VR Port 0.2.2: `CyberpunkVRPortInstaller-0.2.2.exe`.
 
 ## [0.1.9] - 2026-11-06
 

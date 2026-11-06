@@ -65,10 +65,12 @@ internal sealed class ModSafeModeManager
 
             var problems = VerifyActive(gameRoot, manifest);
             if (problems.Count > 0)
-                throw new InstallerException("Не удалось полностью отключить моды:\n• " + string.Join("\n• ", problems));
+                throw new InstallerException(L.T("Не удалось полностью отключить моды:\n• ",
+                    "Could not fully disable mods:\n• ") + string.Join("\n• ", problems));
             Directory.CreateDirectory(stateRoot);
             File.WriteAllText(Path.Combine(stateRoot, ManifestName), JsonSerializer.Serialize(manifest, JsonOptions));
-            progress?.Report(new(100, $"Safe mode включён; отключено объектов: {manifest.Items.Count}"));
+            progress?.Report(new(100, L.T($"Safe mode включён; отключено объектов: {manifest.Items.Count}",
+                $"Safe Mode enabled; items disabled: {manifest.Items.Count}")));
             return new(true, true, []);
         }
         catch
@@ -81,7 +83,7 @@ internal sealed class ModSafeModeManager
     public SafeModeResult Repair(string gameRoot, IProgress<InstallProgress>? progress = null)
     {
         EnsureSafe(gameRoot);
-        var manifest = Load(gameRoot) ?? throw new InstallerException("Safe mode не включён.");
+        var manifest = Load(gameRoot) ?? throw new InstallerException(L.T("Safe mode не включён.", "Safe Mode is not enabled."));
         var stateRoot = Path.Combine(gameRoot, StateDirectoryName);
         var payloadRoot = Path.Combine(stateRoot, "payload");
 
@@ -107,7 +109,8 @@ internal sealed class ModSafeModeManager
             }
             else if (recorded.IsDirectory != isDirectory)
             {
-                throw new InstallerException($"Тип пути Safe mode изменился: {relative}");
+                throw new InstallerException(L.T($"Тип пути Safe mode изменился: {relative}",
+                    $"Safe Mode path type changed: {relative}"));
             }
 
             var destination = SafeCombine(payloadRoot, relative);
@@ -116,17 +119,21 @@ internal sealed class ModSafeModeManager
             else
             {
                 if (File.Exists(destination))
-                    throw new InstallerException($"В хранилище Safe mode уже есть файл: {relative}");
+                    throw new InstallerException(L.T($"В хранилище Safe mode уже есть файл: {relative}",
+                        $"Safe Mode storage already contains a file: {relative}"));
                 File.Move(source, destination);
             }
-            progress?.Report(new((int)(90d * (i + 1) / ModLoadPaths.Length), $"Ремонт Safe mode: {relative}"));
+            progress?.Report(new((int)(90d * (i + 1) / ModLoadPaths.Length),
+                L.T($"Ремонт Safe mode: {relative}", $"Repairing Safe Mode: {relative}")));
         }
 
         var problems = VerifyActive(gameRoot, manifest);
         if (problems.Count > 0)
-            throw new InstallerException("Safe mode всё ещё неполон:\n• " + string.Join("\n• ", problems));
+            throw new InstallerException(L.T("Safe mode всё ещё неполон:\n• ",
+                "Safe Mode is still incomplete:\n• ") + string.Join("\n• ", problems));
         File.WriteAllText(Path.Combine(stateRoot, ManifestName), JsonSerializer.Serialize(manifest, JsonOptions));
-        progress?.Report(new(100, $"Safe mode отремонтирован; защищено объектов: {manifest.Items.Count}"));
+        progress?.Report(new(100, L.T($"Safe mode отремонтирован; защищено объектов: {manifest.Items.Count}",
+            $"Safe Mode repaired; protected items: {manifest.Items.Count}")));
         return new(true, true, []);
     }
 
@@ -142,7 +149,8 @@ internal sealed class ModSafeModeManager
         {
             var target = SafeCombine(gameRoot, item.RelativePath);
             if (File.Exists(target) || Directory.Exists(target))
-                throw new InstallerException($"Нельзя выйти из Safe mode: путь уже занят: {item.RelativePath}");
+                throw new InstallerException(L.T($"Нельзя выйти из Safe mode: путь уже занят: {item.RelativePath}",
+                    $"Cannot exit Safe Mode; path is already occupied: {item.RelativePath}"));
         }
 
         var restored = new List<SafeModeItem>();
@@ -153,7 +161,8 @@ internal sealed class ModSafeModeManager
                 var item = manifest.Items[i];
                 RestoreItems(gameRoot, payloadRoot, [item], true);
                 restored.Add(item);
-                progress?.Report(new((int)(90d * (i + 1) / Math.Max(1, manifest.Items.Count)), $"Восстановление: {item.RelativePath}"));
+                progress?.Report(new((int)(90d * (i + 1) / Math.Max(1, manifest.Items.Count)),
+                    L.T($"Восстановление: {item.RelativePath}", $"Restoring: {item.RelativePath}")));
             }
             var missing = manifest.Items.Where(item =>
             {
@@ -161,9 +170,11 @@ internal sealed class ModSafeModeManager
                 return item.IsDirectory ? !Directory.Exists(path) : !File.Exists(path);
             }).Select(item => item.RelativePath).ToArray();
             if (missing.Length > 0)
-                throw new InstallerException("Проверка восстановления не пройдена:\n• " + string.Join("\n• ", missing));
+                throw new InstallerException(L.T("Проверка восстановления не пройдена:\n• ",
+                    "Restore verification failed:\n• ") + string.Join("\n• ", missing));
             Directory.Delete(stateRoot, true);
-            progress?.Report(new(100, $"Safe mode выключен; восстановлено объектов: {restored.Count}"));
+            progress?.Report(new(100, L.T($"Safe mode выключен; восстановлено объектов: {restored.Count}",
+                $"Safe Mode disabled; items restored: {restored.Count}")));
             return new(false, true, []);
         }
         catch
@@ -192,10 +203,10 @@ internal sealed class ModSafeModeManager
         {
             var active = SafeCombine(gameRoot, item.RelativePath);
             if (File.Exists(active) || Directory.Exists(active))
-                problems.Add($"Остался активным: {item.RelativePath}");
+                problems.Add(L.T($"Остался активным: {item.RelativePath}", $"Still active: {item.RelativePath}"));
             var stored = SafeCombine(payloadRoot, item.RelativePath);
             if (item.IsDirectory ? !Directory.Exists(stored) : !File.Exists(stored))
-                problems.Add($"Не найден в хранилище: {item.RelativePath}");
+                problems.Add(L.T($"Не найден в хранилище: {item.RelativePath}", $"Not found in storage: {item.RelativePath}"));
         }
 
         // Also inspect the current definition. This makes an older manifest fail closed
@@ -206,7 +217,7 @@ internal sealed class ModSafeModeManager
         {
             var active = SafeCombine(gameRoot, relative);
             if (File.Exists(active) || Directory.Exists(active))
-                problems.Add($"Не отключён Safe mode: {relative}");
+                problems.Add(L.T($"Не отключён Safe mode: {relative}", $"Not disabled by Safe Mode: {relative}"));
         }
         return problems;
     }
@@ -221,7 +232,8 @@ internal sealed class ModSafeModeManager
             {
                 if (!Directory.Exists(source))
                 {
-                    if (requireSource) throw new InstallerException($"Не найдена сохранённая папка: {item.RelativePath}");
+                    if (requireSource) throw new InstallerException(L.T($"Не найдена сохранённая папка: {item.RelativePath}",
+                        $"Stored folder not found: {item.RelativePath}"));
                     continue;
                 }
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
@@ -231,7 +243,8 @@ internal sealed class ModSafeModeManager
             {
                 if (!File.Exists(source))
                 {
-                    if (requireSource) throw new InstallerException($"Не найден сохранённый файл: {item.RelativePath}");
+                    if (requireSource) throw new InstallerException(L.T($"Не найден сохранённый файл: {item.RelativePath}",
+                        $"Stored file not found: {item.RelativePath}"));
                     continue;
                 }
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
@@ -253,13 +266,14 @@ internal sealed class ModSafeModeManager
             var target = Path.Combine(destination, Path.GetFileName(entry));
             if (Directory.Exists(entry))
             {
-                if (File.Exists(target)) throw new InstallerException($"Конфликт Safe mode: {target}");
+                if (File.Exists(target)) throw new InstallerException(L.T($"Конфликт Safe mode: {target}",
+                    $"Safe Mode conflict: {target}"));
                 MoveDirectoryMerge(entry, target);
             }
             else
             {
                 if (File.Exists(target) || Directory.Exists(target))
-                    throw new InstallerException($"Конфликт Safe mode: {target}");
+                    throw new InstallerException(L.T($"Конфликт Safe mode: {target}", $"Safe Mode conflict: {target}"));
                 File.Move(entry, target);
             }
         }
@@ -274,9 +288,11 @@ internal sealed class ModSafeModeManager
 
     private static void EnsureSafe(string gameRoot)
     {
-        if (!GameLocator.IsGameRoot(gameRoot)) throw new InstallerException("Выбрана неправильная папка игры.");
+        if (!GameLocator.IsGameRoot(gameRoot)) throw new InstallerException(L.T(
+            "Выбрана неправильная папка игры.", "The selected game folder is invalid."));
         if (Process.GetProcessesByName("Cyberpunk2077").Length > 0)
-            throw new InstallerException("Закройте Cyberpunk 2077 перед переключением Safe mode.");
+            throw new InstallerException(L.T("Закройте Cyberpunk 2077 перед переключением Safe mode.",
+                "Close Cyberpunk 2077 before changing Safe Mode."));
     }
 
     private static string SafeCombine(string root, string relative)
@@ -284,7 +300,8 @@ internal sealed class ModSafeModeManager
         var fullRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         var fullPath = Path.GetFullPath(Path.Combine(root, relative));
         if (!fullPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
-            throw new InstallerException($"Путь выходит за пределы папки игры: {relative}");
+            throw new InstallerException(L.T($"Путь выходит за пределы папки игры: {relative}",
+                $"Path escapes the game folder: {relative}"));
         return fullPath;
     }
 }

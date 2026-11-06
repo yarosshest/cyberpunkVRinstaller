@@ -18,9 +18,14 @@ internal sealed class MainForm : Form
     private readonly CyberButton _archivesButton = new();
     private readonly CyberButton _toggleVrButton = new();
     private readonly CyberButton _safeModeButton = new();
+    private readonly CyberButton _languageButton = new();
+    private readonly CyberButton _closeButton = new();
     private readonly ListView _dependencies = new();
     private readonly Label _status = new();
     private readonly Label _pathHint = new();
+    private readonly Label _subtitle = new();
+    private readonly Label _gameSectionLabel = new();
+    private readonly Label _dependenciesSectionLabel = new();
     private readonly CyberProgressBar _progress = new();
     private readonly LinkLabel _projectLink = new();
     private CancellationTokenSource? _refreshCts;
@@ -35,7 +40,6 @@ internal sealed class MainForm : Form
 
     public MainForm()
     {
-        Text = $"Cyberpunk VR Port — Installer {InstallerEngine.InstallerVersion} — {BuildMarker}";
         ClientSize = new Size(1040, 740);
         MinimumSize = new Size(920, 680);
         BackColor = Background;
@@ -45,6 +49,7 @@ internal sealed class MainForm : Form
         FormBorderStyle = FormBorderStyle.Sizable;
 
         BuildUi();
+        ApplyLanguage();
         Shown += async (_, _) => await AutoDetectAsync();
         FormClosed += (_, _) => _refreshCts?.Cancel();
     }
@@ -81,15 +86,11 @@ internal sealed class MainForm : Form
             Location = new Point(34, 20),
             BackColor = Color.Transparent
         };
-        var subtitle = new Label
-        {
-            Text = "АВТОНОМНЫЙ WINDOWS-ИНСТАЛЛЯТОР  •  CYBERPUNK 2077 2.5",
-            Font = new Font("Segoe UI", 9.5F),
-            ForeColor = Muted,
-            AutoSize = true,
-            Location = new Point(37, 75),
-            BackColor = Color.Transparent
-        };
+        _subtitle.AutoSize = true;
+        _subtitle.Font = new Font("Segoe UI", 9.5F);
+        _subtitle.ForeColor = Muted;
+        _subtitle.Location = new Point(37, 75);
+        _subtitle.BackColor = Color.Transparent;
         var version = new Label
         {
             Text = $"VR {InstallerEngine.ModVersion}  •  INST {InstallerEngine.InstallerVersion}",
@@ -97,15 +98,30 @@ internal sealed class MainForm : Form
             ForeColor = Cyan,
             BackColor = PanelLight,
             AutoSize = false,
-            Size = new Size(210, 30),
+            Size = new Size(230, 30),
             TextAlign = ContentAlignment.MiddleCenter,
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
             Location = new Point(header.Width - 190, 27)
         };
-        header.Resize += (_, _) => version.Left = header.ClientSize.Width - version.Width - 34;
+        StyleButton(_languageButton, "EN", false);
+        _languageButton.Size = new Size(62, 30);
+        _languageButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        _languageButton.Click += async (_, _) =>
+        {
+            L.Toggle();
+            ApplyLanguage();
+            _shownVersionWarningKey = null;
+            await RefreshStateAsync();
+        };
+        header.Resize += (_, _) =>
+        {
+            version.Left = header.ClientSize.Width - version.Width - 34;
+            _languageButton.Left = version.Left - _languageButton.Width - 10;
+        };
         header.Controls.Add(title);
-        header.Controls.Add(subtitle);
+        header.Controls.Add(_subtitle);
         header.Controls.Add(version);
+        header.Controls.Add(_languageButton);
         root.Controls.Add(header, 0, 0);
 
         var body = new TableLayoutPanel
@@ -127,7 +143,8 @@ internal sealed class MainForm : Form
         body.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
         root.Controls.Add(body, 0, 1);
 
-        body.Controls.Add(CreateSectionLabel("01  /  ПАПКА ИГРЫ"), 0, 0);
+        ConfigureSectionLabel(_gameSectionLabel);
+        body.Controls.Add(_gameSectionLabel, 0, 0);
 
         var pathPanel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
         pathPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -158,7 +175,8 @@ internal sealed class MainForm : Form
         depHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 174));
         depHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 116));
         depHeader.Margin = Padding.Empty;
-        depHeader.Controls.Add(CreateSectionLabel("02  /  ЗАВИСИМОСТИ"), 0, 0);
+        ConfigureSectionLabel(_dependenciesSectionLabel);
+        depHeader.Controls.Add(_dependenciesSectionLabel, 0, 0);
         StyleButton(_safeModeButton, "SAFE MODE", false);
         _safeModeButton.Dock = DockStyle.Fill;
         _safeModeButton.Margin = new Padding(0, 4, 8, 4);
@@ -243,28 +261,72 @@ internal sealed class MainForm : Form
         StyleButton(_installButton, "УСТАНОВИТЬ", true);
         _installButton.Dock = DockStyle.Fill;
         _installButton.Click += async (_, _) => await InstallAsync();
-        var close = new CyberButton();
-        StyleButton(close, "ЗАКРЫТЬ", false);
-        close.Dock = DockStyle.Fill;
-        close.Click += (_, _) => Close();
+        StyleButton(_closeButton, "ЗАКРЫТЬ", false);
+        _closeButton.Dock = DockStyle.Fill;
+        _closeButton.Click += (_, _) => Close();
         actions.Controls.Add(_projectLink, 0, 0);
         actions.Controls.Add(_componentsButton, 1, 0);
         actions.Controls.Add(_toggleVrButton, 2, 0);
         actions.Controls.Add(_removeButton, 3, 0);
-        actions.Controls.Add(close, 4, 0);
+        actions.Controls.Add(_closeButton, 4, 0);
         actions.Controls.Add(_installButton, 5, 0);
         body.Controls.Add(actions, 0, 7);
     }
 
-    private static Label CreateSectionLabel(string text) => new()
+    private static void ConfigureSectionLabel(Label label)
     {
-        Text = text,
-        ForeColor = Cyan,
-        Font = new Font("Segoe UI Semibold", 8.5F),
-        Dock = DockStyle.Fill,
-        TextAlign = ContentAlignment.BottomLeft,
-        Padding = new Padding(2, 0, 0, 2)
-    };
+        label.ForeColor = Cyan;
+        label.Font = new Font("Segoe UI Semibold", 8.5F);
+        label.Dock = DockStyle.Fill;
+        label.TextAlign = ContentAlignment.BottomLeft;
+        label.Padding = new Padding(2, 0, 0, 2);
+    }
+
+    private void ApplyLanguage()
+    {
+        Text = L.T(
+            $"Cyberpunk VR Port — Установщик {InstallerEngine.InstallerVersion} — {BuildMarker}",
+            $"Cyberpunk VR Port — Installer {InstallerEngine.InstallerVersion} — {BuildMarker}");
+        _subtitle.Text = L.T("АВТОНОМНЫЙ WINDOWS-ИНСТАЛЛЯТОР  •  CYBERPUNK 2077 2.5",
+            "STANDALONE WINDOWS INSTALLER  •  CYBERPUNK 2077 2.5");
+        _languageButton.Text = L.IsRussian ? "EN" : "RU";
+        _gameSectionLabel.Text = L.T("01  /  ПАПКА ИГРЫ", "01  /  GAME FOLDER");
+        _dependenciesSectionLabel.Text = L.T("02  /  ЗАВИСИМОСТИ", "02  /  DEPENDENCIES");
+        _browseButton.Text = L.T("ОБЗОР…", "BROWSE…");
+        _archivesButton.Text = L.T("АРХИВ МОДА…", "MOD ARCHIVE…");
+        _refreshButton.Text = L.T("ПРОВЕРИТЬ", "CHECK");
+        _componentsButton.Text = L.T("КОМПОНЕНТЫ", "COMPONENTS");
+        _removeButton.Text = L.T("УДАЛИТЬ МОД", "REMOVE MOD");
+        _closeButton.Text = L.T("ЗАКРЫТЬ", "CLOSE");
+        _dependencies.Columns[1].Text = L.T("КОМПОНЕНТ", "COMPONENT");
+        _dependencies.Columns[2].Text = L.T("МИНИМУМ", "MINIMUM");
+        _dependencies.Columns[3].Text = L.T("СОСТОЯНИЕ", "STATUS");
+        _status.Text = L.T("Выберите папку игры", "Select the game folder");
+        UpdateProjectLink();
+        ApplyDynamicButtonText();
+    }
+
+    private void UpdateProjectLink()
+    {
+        var projectText = "GitHub";
+        var licenseText = "MIT";
+        _projectLink.Text = projectText + "  •  " + licenseText;
+        _projectLink.Links.Clear();
+        _projectLink.Links.Add(0, projectText.Length, "project");
+        _projectLink.Links.Add(projectText.Length + 5, licenseText.Length, "license");
+    }
+
+    private void ApplyDynamicButtonText()
+    {
+        var root = _pathBox.Text.Trim();
+        var installed = GameLocator.IsGameRoot(root) ? _engine.GetInstalledVersion(root) : null;
+        var safeMode = GameLocator.IsGameRoot(root) ? _safeModeManager.GetStatus(root) : new SafeModeResult(false, true, []);
+        _installButton.Text = installed is null ? L.T("УСТАНОВИТЬ", "INSTALL") : L.T("ПЕРЕУСТАНОВИТЬ", "REINSTALL");
+        _toggleVrButton.Text = _engine.IsDisabled(root) ? L.T("ВКЛЮЧИТЬ VR", "ENABLE VR") : L.T("ОТКЛЮЧИТЬ VR", "DISABLE VR");
+        _safeModeButton.Text = safeMode.IsActive
+            ? (safeMode.Verified ? L.T("ВКЛЮЧИТЬ МОДЫ", "ENABLE MODS") : L.T("ПОЧИНИТЬ SAFE MODE", "REPAIR SAFE MODE"))
+            : "SAFE MODE";
+    }
 
     private void ResizeDependencyColumns()
     {
@@ -311,7 +373,7 @@ internal sealed class MainForm : Form
 
     private async Task AutoDetectAsync()
     {
-        _status.Text = "Поиск установленной игры…";
+        _status.Text = L.T("Поиск установленной игры…", "Searching for an installed game…");
         var installs = await Task.Run(GameLocator.FindInstallations);
         if (installs.Count > 0) _pathBox.Text = installs[0];
         else await RefreshStateAsync();
@@ -327,7 +389,8 @@ internal sealed class MainForm : Form
         var gameVersion = valid ? GameVersionChecker.Check(root) : null;
         var compatibleVersion = gameVersion?.State == GameVersionState.Compatible;
         _pathHint.Text = !valid
-            ? "Укажите корень игры, содержащий папки bin, r6 и red4ext"
+            ? L.T("Укажите корень игры, содержащий папки bin, r6 и red4ext",
+                "Select the game root containing the bin, r6, and red4ext folders")
             : compatibleVersion
                 ? $"✓ {gameVersion!.Details}"
                 : $"⚠ {gameVersion!.Details}";
@@ -341,12 +404,12 @@ internal sealed class MainForm : Form
         _dependencies.Items.Clear();
         if (!valid)
         {
-            _status.Text = "Игра не найдена";
+            _status.Text = L.T("Игра не найдена", "Game not found");
             _status.ForeColor = Muted;
             return;
         }
 
-        _status.Text = "Проверка зависимостей…";
+        _status.Text = L.T("Проверка зависимостей…", "Checking dependencies…");
         try
         {
             var checks = await Task.Run(() => DependencyChecker.Check(root), token);
@@ -371,10 +434,10 @@ internal sealed class MainForm : Form
             var installed = _engine.GetInstalledVersion(root);
             var modState = _engine.GetModState(root);
             var safeMode = _safeModeManager.GetStatus(root);
-            _installButton.Text = installed is null ? "УСТАНОВИТЬ" : "ПЕРЕУСТАНОВИТЬ";
-            _toggleVrButton.Text = _engine.IsDisabled(root) ? "ВКЛЮЧИТЬ VR" : "ОТКЛЮЧИТЬ VR";
+            _installButton.Text = installed is null ? L.T("УСТАНОВИТЬ", "INSTALL") : L.T("ПЕРЕУСТАНОВИТЬ", "REINSTALL");
+            _toggleVrButton.Text = _engine.IsDisabled(root) ? L.T("ВКЛЮЧИТЬ VR", "ENABLE VR") : L.T("ОТКЛЮЧИТЬ VR", "DISABLE VR");
             _safeModeButton.Text = safeMode.IsActive
-                ? (safeMode.Verified ? "ВКЛЮЧИТЬ МОДЫ" : "ПОЧИНИТЬ SAFE MODE")
+                ? (safeMode.Verified ? L.T("ВКЛЮЧИТЬ МОДЫ", "ENABLE MODS") : L.T("ПОЧИНИТЬ SAFE MODE", "REPAIR SAFE MODE"))
                 : "SAFE MODE";
             _safeModeButton.Primary = safeMode.IsActive;
             _removeButton.Enabled = installed is not null && !safeMode.IsActive;
@@ -385,23 +448,29 @@ internal sealed class MainForm : Form
             if (safeMode.IsActive)
             {
                 _status.Text = safeMode.Verified
-                    ? "SAFE MODE: все пути загрузки модов отключены — проверка пройдена"
-                    : $"SAFE MODE неполный: проблем {safeMode.Problems.Count}";
+                    ? L.T("SAFE MODE: все пути загрузки модов отключены — проверка пройдена",
+                        "SAFE MODE: all mod loading paths are disabled — verification passed")
+                    : L.T($"SAFE MODE неполный: проблем {safeMode.Problems.Count}",
+                        $"SAFE MODE is incomplete: {safeMode.Problems.Count} problem(s)");
                 _status.ForeColor = safeMode.Verified ? Color.FromArgb(77, 230, 138) : Yellow;
             }
             else if (modState.State == VrModState.Disabled)
             {
-                _status.Text = "VR-мод отключён — активные файлы отсутствуют, проверка пройдена";
+                _status.Text = L.T("VR-мод отключён — активные файлы отсутствуют, проверка пройдена",
+                    "VR mod is disabled — no active files found, verification passed");
                 _status.ForeColor = Color.FromArgb(77, 230, 138);
             }
             else if (modState.State == VrModState.Incomplete)
             {
-                _status.Text = $"Состояние VR-мода неполное: проблем {modState.Problems.Count}";
+                _status.Text = L.T($"Состояние VR-мода неполное: проблем {modState.Problems.Count}",
+                    $"VR mod state is incomplete: {modState.Problems.Count} problem(s)");
                 _status.ForeColor = Yellow;
             }
             else
             {
-                _status.Text = installed is null ? "Готово к установке" : $"Установлена и активна версия {installed}";
+                _status.Text = installed is null
+                    ? L.T("Готово к установке", "Ready to install")
+                    : L.T($"Установлена и активна версия {installed}", $"Version {installed} is installed and active");
                 _status.ForeColor = Muted;
             }
 
@@ -412,22 +481,26 @@ internal sealed class MainForm : Form
                 {
                     _shownVersionWarningKey = warningKey;
                     MessageBox.Show(this,
-                        "Установка заблокирована из-за несовместимой версии игры.\n\n" + gameVersion.Details +
-                        $"\n\nТребуется Cyberpunk 2077 {GameVersionChecker.SupportedGameVersion}. " +
-                        "Отключение VR, Safe mode и удаление уже установленных модов остаются доступными.",
-                        "Проверка версии Cyberpunk 2077", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        L.T("Установка заблокирована из-за несовместимой версии игры.\n\n",
+                            "Installation is blocked because the game version is incompatible.\n\n") + gameVersion.Details +
+                        L.T($"\n\nТребуется Cyberpunk 2077 {GameVersionChecker.SupportedGameVersion}. " +
+                            "Отключение VR, Safe mode и удаление уже установленных модов остаются доступными.",
+                            $"\n\nCyberpunk 2077 {GameVersionChecker.SupportedGameVersion} is required. " +
+                            "Disabling VR, Safe Mode, and removing installed mods remain available."),
+                        L.T("Проверка версии Cyberpunk 2077", "Cyberpunk 2077 version check"),
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
         }
         catch (OperationCanceledException) { }
-        catch (Exception ex) { _status.Text = $"Ошибка проверки: {ex.Message}"; }
+        catch (Exception ex) { _status.Text = L.T($"Ошибка проверки: {ex.Message}", $"Check failed: {ex.Message}"); }
     }
 
     private void Browse(object? sender, EventArgs e)
     {
         using var dialog = new FolderBrowserDialog
         {
-            Description = "Выберите корневую папку Cyberpunk 2077",
+            Description = L.T("Выберите корневую папку Cyberpunk 2077", "Select the Cyberpunk 2077 root folder"),
             UseDescriptionForTitle = true,
             InitialDirectory = Directory.Exists(_pathBox.Text) ? _pathBox.Text : ""
         };
@@ -442,14 +515,16 @@ internal sealed class MainForm : Form
         var missing = checks.Where(d => d.Essential && !d.Found).Select(d => d.Name).ToArray();
         var conflicts = _engine.FindConflicts(root);
         var warnings = new List<string>();
-        if (missing.Length > 0) warnings.Add("Не найдены зависимости:\n• " + string.Join("\n• ", missing));
-        if (conflicts.Count > 0) warnings.Add("Возможные конфликты:\n• " + string.Join("\n• ", conflicts));
+        if (missing.Length > 0) warnings.Add(L.T("Не найдены зависимости:\n• ", "Missing dependencies:\n• ") + string.Join("\n• ", missing));
+        if (conflicts.Count > 0) warnings.Add(L.T("Возможные конфликты:\n• ", "Possible conflicts:\n• ") + string.Join("\n• ", conflicts));
         if (warnings.Count > 0 && MessageBox.Show(this,
-                string.Join("\n\n", warnings) + "\n\nПродолжить установку?",
-                "Требуется внимание", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                string.Join("\n\n", warnings) + L.T("\n\nПродолжить установку?", "\n\nContinue installation?"),
+                L.T("Требуется внимание", "Attention required"), MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
             return;
 
-        await RunOperationAsync(() => _engine.Install(root, CreateProgress()), "Установка завершена. Запустите OpenXR/SteamVR, затем игру.");
+        await RunOperationAsync(() => _engine.Install(root, CreateProgress()),
+            L.T("Установка завершена. Запустите OpenXR/SteamVR, затем игру.",
+                "Installation complete. Start OpenXR/SteamVR, then launch the game."));
     }
 
     private async Task InstallComponentsAsync()
@@ -457,16 +532,21 @@ internal sealed class MainForm : Form
         var root = _pathBox.Text.Trim();
         GameVersionChecker.EnsureCompatible(root);
         if (MessageBox.Show(this,
-                "Будет загружена и установлена последняя официальная версия RED4ext с GitHub.\n\n" +
-                "Cyberpunk VR Port 0.2.2 больше не требует CET, redscript, ArchiveXL, TweakXL, " +
-                "Codeware, Equipment-EX, Input Loader или моды Nexus. Они останутся на месте, если нужны другим модам.\n\n" +
-                "Продолжить?", "Установка компонентов", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                L.T("Будет загружена и установлена последняя официальная версия RED4ext с GitHub.\n\n" +
+                    "Cyberpunk VR Port 0.2.2 больше не требует CET, redscript, ArchiveXL, TweakXL, " +
+                    "Codeware, Equipment-EX, Input Loader или моды Nexus. Они останутся на месте, если нужны другим модам.\n\n" +
+                    "Продолжить?",
+                    "The latest official RED4ext version will be downloaded and installed from GitHub.\n\n" +
+                    "Cyberpunk VR Port 0.2.2 no longer requires CET, redscript, ArchiveXL, TweakXL, " +
+                    "Codeware, Equipment-EX, Input Loader, or Nexus mods. They will remain in place if other mods need them.\n\n" +
+                    "Continue?"), L.T("Установка компонентов", "Install components"),
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
             return;
 
         var succeeded = await RunOperationAsync(async () =>
         {
             await _componentInstaller.InstallGitHubComponentsAsync(root, CreateProgress());
-        }, "Компоненты GitHub установлены.");
+        }, L.T("Компоненты GitHub установлены.", "GitHub components installed."));
         if (!succeeded) return;
 
     }
@@ -475,8 +555,8 @@ internal sealed class MainForm : Form
     {
         using var dialog = new OpenFileDialog
         {
-            Title = "Выберите архивы модов или компонентов",
-            Filter = "Архивы модов (*.zip;*.rar;*.7z)|*.zip;*.rar;*.7z|ZIP (*.zip)|*.zip|RAR (*.rar)|*.rar|7z (*.7z)|*.7z",
+            Title = L.T("Выберите архивы модов или компонентов", "Select mod or component archives"),
+            Filter = L.T("Архивы модов", "Mod archives") + " (*.zip;*.rar;*.7z)|*.zip;*.rar;*.7z|ZIP (*.zip)|*.zip|RAR (*.rar)|*.rar|7z (*.7z)|*.7z",
             Multiselect = true,
             CheckFileExists = true
         };
@@ -493,22 +573,27 @@ internal sealed class MainForm : Form
                 var missingAfter = DependencyChecker.Check(root).Where(d => !d.Found)
                     .Select(d => d.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (missingBefore.SetEquals(missingAfter))
-                    throw new InstallerException("Архив распакован, но отсутствующий компонент не обнаружен.");
+                    throw new InstallerException(L.T("Архив распакован, но отсутствующий компонент не обнаружен.",
+                        "The archive was extracted, but the missing component was not detected."));
             }
         },
-            "Выбранные компоненты установлены.");
+            L.T("Выбранные компоненты установлены.", "Selected components installed."));
     }
 
     private async Task RemoveAsync()
     {
-        if (MessageBox.Show(this, "Удалить Cyberpunk VR Port и восстановить заменённые файлы?", "Удаление",
+        if (MessageBox.Show(this, L.T("Удалить Cyberpunk VR Port и восстановить заменённые файлы?",
+                "Remove Cyberpunk VR Port and restore replaced files?"), L.T("Удаление", "Removal"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
 
         UninstallResult? result = null;
-        await RunOperationAsync(() => result = _engine.Uninstall(_pathBox.Text.Trim(), CreateProgress()), "Мод удалён.");
+        await RunOperationAsync(() => result = _engine.Uninstall(_pathBox.Text.Trim(), CreateProgress()),
+            L.T("Мод удалён.", "Mod removed."));
         if (result?.PreservedModifiedFiles.Count > 0)
-            MessageBox.Show(this, "Изменённые после установки файлы оставлены на месте:\n\n" +
-                string.Join("\n", result.PreservedModifiedFiles), "Файлы сохранены", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, L.T("Изменённые после установки файлы оставлены на месте:\n\n",
+                "Files changed after installation were left in place:\n\n") +
+                string.Join("\n", result.PreservedModifiedFiles), L.T("Файлы сохранены", "Files preserved"),
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private async Task ToggleVrAsync()
@@ -516,15 +601,19 @@ internal sealed class MainForm : Form
         var root = _pathBox.Text.Trim();
         var disabled = _engine.IsDisabled(root);
         var question = disabled
-            ? "Включить VR-мод и вернуть его файлы в папку игры?"
-            : "Отключить только Cyberpunk VR Port?\n\nФайлы будут перемещены в защищённое хранилище и проверены. Общие компоненты останутся активны.";
-        if (MessageBox.Show(this, question, disabled ? "Включение VR" : "Отключение VR",
+            ? L.T("Включить VR-мод и вернуть его файлы в папку игры?",
+                "Enable the VR mod and return its files to the game folder?")
+            : L.T("Отключить только Cyberpunk VR Port?\n\nФайлы будут перемещены в защищённое хранилище и проверены. Общие компоненты останутся активны.",
+                "Disable only Cyberpunk VR Port?\n\nIts files will be moved to protected storage and verified. Shared components will remain active.");
+        if (MessageBox.Show(this, question, disabled ? L.T("Включение VR", "Enable VR") : L.T("Отключение VR", "Disable VR"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
         if (disabled)
-            await RunOperationAsync(() => _engine.Enable(root, CreateProgress()), "VR-мод включён и проверен.");
+            await RunOperationAsync(() => _engine.Enable(root, CreateProgress()),
+                L.T("VR-мод включён и проверен.", "VR mod enabled and verified."));
         else
             await RunOperationAsync(() => _engine.Disable(root, CreateProgress()),
-                "VR-мод отключён. Проверка подтвердила, что игра не видит его активные файлы.");
+                L.T("VR-мод отключён. Проверка подтвердила, что игра не видит его активные файлы.",
+                    "VR mod disabled. Verification confirmed that the game cannot see its active files."));
     }
 
     private async Task ToggleSafeModeAsync()
@@ -536,24 +625,29 @@ internal sealed class MainForm : Form
             if (!status.Verified)
             {
                 if (MessageBox.Show(this,
-                        "Safe mode включён не полностью. Дозаписать новые точки загрузки модов в защищённое хранилище и повторить проверку?",
-                        "Ремонт Safe mode", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+                        L.T("Safe mode включён не полностью. Дозаписать новые точки загрузки модов в защищённое хранилище и повторить проверку?",
+                            "Safe Mode is incomplete. Move newly detected mod loading paths to protected storage and verify again?"),
+                        L.T("Ремонт Safe mode", "Repair Safe Mode"), MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
                 await RunOperationAsync(() => _safeModeManager.Repair(root, CreateProgress()),
-                    "Safe mode отремонтирован. Проверка подтвердила полное отключение известных загрузчиков модов.");
+                    L.T("Safe mode отремонтирован. Проверка подтвердила полное отключение известных загрузчиков модов.",
+                        "Safe Mode repaired. Verification confirmed that all known mod loaders are disabled."));
                 return;
             }
-            if (MessageBox.Show(this, "Выйти из Safe mode и восстановить все отключённые моды?", "Включение модов",
+            if (MessageBox.Show(this, L.T("Выйти из Safe mode и восстановить все отключённые моды?",
+                    "Exit Safe Mode and restore all disabled mods?"), L.T("Включение модов", "Enable mods"),
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
             await RunOperationAsync(() => _safeModeManager.Deactivate(root, CreateProgress()),
-                "Все файлы модов восстановлены и проверены.");
+                L.T("Все файлы модов восстановлены и проверены.", "All mod files restored and verified."));
         }
         else
         {
             if (MessageBox.Show(this,
-                    "Включить Safe mode для диагностики вылетов?\n\nБудут временно отключены RED4ext, CET, redscript-моды, ArchiveXL-моды и остальные файлы модификаций. Все данные можно восстановить этой же кнопкой.",
+                    L.T("Включить Safe mode для диагностики вылетов?\n\nБудут временно отключены RED4ext, CET, redscript-моды, ArchiveXL-моды и остальные файлы модификаций. Все данные можно восстановить этой же кнопкой.",
+                        "Enable Safe Mode to diagnose crashes?\n\nRED4ext, CET, redscript mods, ArchiveXL mods, and other modification files will be temporarily disabled. Everything can be restored with the same button."),
                     "Safe mode", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
             await RunOperationAsync(() => _safeModeManager.Activate(root, CreateProgress()),
-                "Safe mode включён. Проверка подтвердила, что пути загрузки модов недоступны игре.");
+                L.T("Safe mode включён. Проверка подтвердила, что пути загрузки модов недоступны игре.",
+                    "Safe Mode enabled. Verification confirmed that mod loading paths are unavailable to the game."));
         }
     }
 
@@ -573,7 +667,7 @@ internal sealed class MainForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, ex.Message, L.T("Ошибка", "Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         finally
         {
@@ -594,7 +688,7 @@ internal sealed class MainForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, ex.Message, L.T("Ошибка", "Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         finally
         {
@@ -615,6 +709,7 @@ internal sealed class MainForm : Form
         _removeButton.Enabled = !busy;
         _toggleVrButton.Enabled = !busy;
         _safeModeButton.Enabled = !busy;
+        _languageButton.Enabled = !busy;
         UseWaitCursor = busy;
         if (!busy) _progress.Value = 0;
     }
@@ -641,12 +736,12 @@ internal sealed class MainForm : Form
     {
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ThirdPartyNotices.txt");
         using var reader = stream is null ? null : new StreamReader(stream);
-        var notices = reader?.ReadToEnd() ?? "Текст лицензии не найден.";
+        var notices = reader?.ReadToEnd() ?? L.T("Текст лицензии не найден.", "License text was not found.");
         using var sevenZipStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("SevenZipLicense.txt");
         using var sevenZipReader = sevenZipStream is null ? null : new StreamReader(sevenZipStream);
         if (sevenZipReader is not null) notices += "\n\n---------------- 7-Zip ----------------\n\n" + sevenZipReader.ReadToEnd();
         MessageBox.Show(this, notices,
-            "Лицензия CyberpunkVR Port", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            L.T("Лицензия CyberpunkVR Port", "CyberpunkVR Port license"), MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 }
 

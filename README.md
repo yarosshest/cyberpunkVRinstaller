@@ -18,6 +18,7 @@ disable mods while troubleshooting crashes.
 
 ## Features
 
+- switches the complete interface between English and Russian and remembers the selected language;
 - detects Cyberpunk 2077 installations from Steam, GOG, and Epic Games;
 - checks the `Cyberpunk2077.exe` version at startup;
 - installs the official VR Port 0.2.2 archive;
@@ -31,7 +32,7 @@ disable mods while troubleshooting crashes.
 
 ## Quick start
 
-1. Download `CyberpunkVRPortInstaller-0.1.9.exe` from [Releases](../../releases).
+1. Download `CyberpunkVRPortInstaller-0.2.2.exe` from [Releases](../../releases).
 2. Close Cyberpunk 2077 and run the installer as administrator.
 3. Verify that the correct game directory and version 2.5 are displayed.
 4. Select **Install components** to install or update RED4ext.
@@ -83,7 +84,7 @@ verifies its SHA-256, and embeds it together with a minimal licensed 7-Zip runti
 pwsh ./build.ps1
 ```
 
-Output: `dist/CyberpunkVRPortInstaller-0.1.9.exe`.
+Output: `dist/CyberpunkVRPortInstaller-0.2.2.exe`.
 
 Run the local self-test without modifying an installed game:
 

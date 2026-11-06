@@ -4,7 +4,7 @@
 
 ## Supported version
 
-Security fixes are provided for the current 0.1.9 installer release.
+Security fixes are provided for the current 0.2.2 installer release.
 
 ## Reporting a vulnerability
 

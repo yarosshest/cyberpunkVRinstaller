@@ -38,11 +38,11 @@ internal static class DependencyChecker
             found ??= paths.FirstOrDefault(p => definition.SearchTokens.Any(t =>
                 Path.GetFileName(p).Replace(" ", "", StringComparison.Ordinal).Contains(t.Replace(" ", "", StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase)));
 
-            var details = "не найден";
+            var details = L.T("не найден", "not found");
             if (found is not null)
             {
                 var version = TryGetVersion(found);
-                details = version is null ? "обнаружен" : $"версия {version}";
+                details = version is null ? L.T("обнаружен", "detected") : L.T($"версия {version}", $"version {version}");
             }
             result.Add(new DependencyStatus(definition.Name, definition.Minimum, found is not null, details));
         }

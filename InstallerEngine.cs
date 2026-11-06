@@ -8,7 +8,7 @@ namespace CyberpunkVRInstaller;
 
 internal sealed class InstallerEngine
 {
-    public const string InstallerVersion = "0.1.9";
+    public const string InstallerVersion = "0.2.2";
     public const string ModVersion = "0.2.2";
     private const string PayloadResource = "CyberpunkVRPort.Payload.zip";
     private const string StateDirectoryName = ".cyberpunk-vr-installer";
@@ -61,7 +61,7 @@ internal sealed class InstallerEngine
 
         var problems = manifest.Files
             .Where(file => !File.Exists(SafeCombine(gameRoot, file.RelativePath)))
-            .Select(file => $"Не найден активный файл: {file.RelativePath}")
+            .Select(file => L.T($"Не найден активный файл: {file.RelativePath}", $"Active file not found: {file.RelativePath}"))
             .ToArray();
         return new(problems.Length == 0 ? VrModState.Enabled : VrModState.Incomplete, problems);
     }
@@ -69,7 +69,8 @@ internal sealed class InstallerEngine
     public ModStateResult Disable(string gameRoot, IProgress<InstallProgress>? progress = null)
     {
         EnsureSafeToModify(gameRoot);
-        var manifest = LoadManifest(gameRoot) ?? throw new InstallerException("VR-мод не установлен этим инсталлятором.");
+        var manifest = LoadManifest(gameRoot) ?? throw new InstallerException(L.T(
+            "VR-мод не установлен этим инсталлятором.", "The VR mod was not installed by this installer."));
         if (manifest.IsDisabled) return GetModState(gameRoot);
 
         var stateRoot = Path.Combine(gameRoot, StateDirectoryName);
@@ -85,7 +86,8 @@ internal sealed class InstallerEngine
 
                 var disabledPath = SafeCombine(disabledRoot, file.RelativePath);
                 if (File.Exists(disabledPath))
-                    throw new InstallerException($"Хранилище отключённых файлов уже содержит: {file.RelativePath}");
+                    throw new InstallerException(L.T($"Хранилище отключённых файлов уже содержит: {file.RelativePath}",
+                        $"Disabled-file storage already contains: {file.RelativePath}"));
                 Directory.CreateDirectory(Path.GetDirectoryName(disabledPath)!);
                 File.Move(activePath, disabledPath);
                 moved.Add(file.RelativePath);
@@ -101,7 +103,8 @@ internal sealed class InstallerEngine
                     }
                 }
                 DeleteEmptyParents(activePath, gameRoot);
-                progress?.Report(new((int)(90d * (i + 1) / Math.Max(1, manifest.Files.Count)), $"Отключение: {file.RelativePath}"));
+                progress?.Report(new((int)(90d * (i + 1) / Math.Max(1, manifest.Files.Count)),
+                    L.T($"Отключение: {file.RelativePath}", $"Disabling: {file.RelativePath}")));
             }
 
             manifest.IsDisabled = true;
@@ -109,9 +112,11 @@ internal sealed class InstallerEngine
             manifest.DisabledFiles = moved;
             var problems = VerifyDisabledState(gameRoot, manifest);
             if (problems.Count > 0)
-                throw new InstallerException("Проверка отключения не пройдена:\n• " + string.Join("\n• ", problems));
+                throw new InstallerException(L.T("Проверка отключения не пройдена:\n• ",
+                    "Disable verification failed:\n• ") + string.Join("\n• ", problems));
             SaveManifest(gameRoot, manifest);
-            progress?.Report(new(100, $"VR-мод отключён; проверено файлов: {moved.Count}"));
+            progress?.Report(new(100, L.T($"VR-мод отключён; проверено файлов: {moved.Count}",
+                $"VR mod disabled; files verified: {moved.Count}")));
             return new(VrModState.Disabled, []);
         }
         catch
@@ -124,7 +129,8 @@ internal sealed class InstallerEngine
     public ModStateResult Enable(string gameRoot, IProgress<InstallProgress>? progress = null)
     {
         EnsureSafeToModify(gameRoot);
-        var manifest = LoadManifest(gameRoot) ?? throw new InstallerException("VR-мод не установлен этим инсталлятором.");
+        var manifest = LoadManifest(gameRoot) ?? throw new InstallerException(L.T(
+            "VR-мод не установлен этим инсталлятором.", "The VR mod was not installed by this installer."));
         if (!manifest.IsDisabled) return GetModState(gameRoot);
 
         var stateRoot = Path.Combine(gameRoot, StateDirectoryName);
@@ -137,34 +143,40 @@ internal sealed class InstallerEngine
                 var relative = manifest.DisabledFiles[i];
                 var disabledPath = SafeCombine(disabledRoot, relative);
                 if (!File.Exists(disabledPath))
-                    throw new InstallerException($"Не найден сохранённый файл VR-мода: {relative}");
+                    throw new InstallerException(L.T($"Не найден сохранённый файл VR-мода: {relative}",
+                        $"Stored VR mod file not found: {relative}"));
                 var activePath = SafeCombine(gameRoot, relative);
                 if (File.Exists(activePath))
                 {
                     var backup = FindOriginalBackup(manifest, relative);
                     if (backup is null)
-                        throw new InstallerException($"Невозможно включить мод: путь уже занят: {relative}");
+                        throw new InstallerException(L.T($"Невозможно включить мод: путь уже занят: {relative}",
+                            $"Cannot enable the mod; path is already occupied: {relative}"));
                     var backupPath = SafeCombine(stateRoot, backup.BackupRelativePath);
                     if (!File.Exists(backupPath) || !string.Equals(ComputeSha256(activePath), ComputeSha256(backupPath), StringComparison.OrdinalIgnoreCase))
-                        throw new InstallerException($"Файл был изменён, пока мод отключён: {relative}");
+                        throw new InstallerException(L.T($"Файл был изменён, пока мод отключён: {relative}",
+                            $"File was changed while the mod was disabled: {relative}"));
                     File.Delete(activePath);
                 }
 
                 Directory.CreateDirectory(Path.GetDirectoryName(activePath)!);
                 File.Move(disabledPath, activePath);
                 restored.Add(relative);
-                progress?.Report(new((int)(90d * (i + 1) / Math.Max(1, manifest.DisabledFiles.Count)), $"Включение: {relative}"));
+                progress?.Report(new((int)(90d * (i + 1) / Math.Max(1, manifest.DisabledFiles.Count)),
+                    L.T($"Включение: {relative}", $"Enabling: {relative}")));
             }
 
             var missing = restored.Where(relative => !File.Exists(SafeCombine(gameRoot, relative))).ToArray();
             if (missing.Length > 0)
-                throw new InstallerException("Проверка включения не пройдена:\n• " + string.Join("\n• ", missing));
+                throw new InstallerException(L.T("Проверка включения не пройдена:\n• ",
+                    "Enable verification failed:\n• ") + string.Join("\n• ", missing));
             manifest.IsDisabled = false;
             manifest.DisabledAt = null;
             manifest.DisabledFiles.Clear();
             SaveManifest(gameRoot, manifest);
             try { if (Directory.Exists(disabledRoot) && !Directory.EnumerateFileSystemEntries(disabledRoot).Any()) Directory.Delete(disabledRoot, true); } catch { }
-            progress?.Report(new(100, $"VR-мод включён; восстановлено файлов: {restored.Count}"));
+            progress?.Report(new(100, L.T($"VR-мод включён; восстановлено файлов: {restored.Count}",
+                $"VR mod enabled; files restored: {restored.Count}")));
             return GetModState(gameRoot);
         }
         catch
@@ -179,7 +191,7 @@ internal sealed class InstallerEngine
         EnsureSafeToModify(gameRoot);
         if (IsInstalled(gameRoot))
         {
-            progress?.Report(new(2, "Удаление предыдущей установки…"));
+            progress?.Report(new(2, L.T("Удаление предыдущей установки…", "Removing previous installation…")));
             Uninstall(gameRoot, progress);
         }
 
@@ -231,7 +243,8 @@ internal sealed class InstallerEngine
                     Sha256 = ComputeSha256(destination),
                     ExistedBefore = existedBefore
                 });
-                progress?.Report(new(8 + (int)(88d * (index + 1) / fileEntries.Length), $"Установка: {relative}"));
+                progress?.Report(new(8 + (int)(88d * (index + 1) / fileEntries.Length),
+                    L.T($"Установка: {relative}", $"Installing: {relative}")));
             }
 
             Directory.CreateDirectory(stateRoot);
@@ -239,7 +252,8 @@ internal sealed class InstallerEngine
             var manifestTemp = manifestPath + ".tmp";
             File.WriteAllText(manifestTemp, JsonSerializer.Serialize(manifest, JsonOptions));
             File.Move(manifestTemp, manifestPath, true);
-            progress?.Report(new(100, $"Cyberpunk VR Port {ModVersion} установлен"));
+            progress?.Report(new(100, L.T($"Cyberpunk VR Port {ModVersion} установлен",
+                $"Cyberpunk VR Port {ModVersion} installed")));
         }
         catch
         {
@@ -251,12 +265,15 @@ internal sealed class InstallerEngine
     public UninstallResult Uninstall(string gameRoot, IProgress<InstallProgress>? progress = null)
     {
         EnsureSafeToModify(gameRoot);
-        var manifest = LoadManifest(gameRoot) ?? throw new InstallerException("Манифест установки не найден.");
+        var manifest = LoadManifest(gameRoot) ?? throw new InstallerException(L.T(
+            "Манифест установки не найден.", "Installation manifest not found."));
         if (manifest.IsDisabled)
         {
-            progress?.Report(new(1, "Подготовка отключённого мода к удалению…"));
+            progress?.Report(new(1, L.T("Подготовка отключённого мода к удалению…",
+                "Preparing the disabled mod for removal…")));
             Enable(gameRoot, progress);
-            manifest = LoadManifest(gameRoot) ?? throw new InstallerException("Манифест установки не найден после включения.");
+            manifest = LoadManifest(gameRoot) ?? throw new InstallerException(L.T(
+                "Манифест установки не найден после включения.", "Installation manifest not found after enabling the mod."));
         }
         var stateRoot = Path.Combine(gameRoot, StateDirectoryName);
         var preserved = new List<string>();
@@ -281,7 +298,8 @@ internal sealed class InstallerEngine
             if (backup is not null)
                 RestoreBackup(gameRoot, stateRoot, backup);
 
-            progress?.Report(new((int)(80d * (manifest.Files.Count - i) / Math.Max(1, manifest.Files.Count)), $"Удаление: {file.RelativePath}"));
+            progress?.Report(new((int)(80d * (manifest.Files.Count - i) / Math.Max(1, manifest.Files.Count)),
+                L.T($"Удаление: {file.RelativePath}", $"Removing: {file.RelativePath}")));
             DeleteEmptyParents(path, gameRoot);
         }
 
@@ -298,7 +316,8 @@ internal sealed class InstallerEngine
             File.WriteAllText(GetManifestPath(gameRoot), JsonSerializer.Serialize(manifest, JsonOptions));
         }
 
-        progress?.Report(new(100, preserved.Count == 0 ? "Мод удалён" : "Мод удалён; изменённые файлы сохранены"));
+        progress?.Report(new(100, preserved.Count == 0 ? L.T("Мод удалён", "Mod removed") :
+            L.T("Мод удалён; изменённые файлы сохранены", "Mod removed; modified files preserved")));
         return new UninstallResult(preserved);
     }
 
@@ -306,31 +325,36 @@ internal sealed class InstallerEngine
     {
         var result = new List<string>();
         var dxgi = Path.Combine(gameRoot, "bin", "x64", "dxgi.dll");
-        if (File.Exists(dxgi)) result.Add(@"bin\x64\dxgi.dll — возможен конфликт с R.E.A.L. VR или другим прокси");
+        if (File.Exists(dxgi)) result.Add(L.T(@"bin\x64\dxgi.dll — возможен конфликт с R.E.A.L. VR или другим прокси",
+            @"bin\x64\dxgi.dll — possible conflict with R.E.A.L. VR or another proxy"));
 
         var pluginDir = Path.Combine(gameRoot, "red4ext", "plugins", "CyberpunkVR_Stereo");
         if (Directory.Exists(pluginDir))
-            result.Add(@"red4ext\plugins\CyberpunkVR_Stereo — осталась старая версия VR Port 0.1.9");
+            result.Add(L.T(@"red4ext\plugins\CyberpunkVR_Stereo — осталась старая версия VR Port 0.1.9",
+                @"red4ext\plugins\CyberpunkVR_Stereo — old VR Port 0.1.9 files remain"));
         return result;
     }
 
     private static void EnsureSafeToModify(string gameRoot)
     {
         if (!GameLocator.IsGameRoot(gameRoot))
-            throw new InstallerException("Выбрана не корневая папка Cyberpunk 2077 (не найден bin\\x64\\Cyberpunk2077.exe).");
+            throw new InstallerException(L.T("Выбрана не корневая папка Cyberpunk 2077 (не найден bin\\x64\\Cyberpunk2077.exe).",
+                "The selected folder is not the Cyberpunk 2077 root (bin\\x64\\Cyberpunk2077.exe was not found)."));
         if (Process.GetProcessesByName("Cyberpunk2077").Length > 0)
-            throw new InstallerException("Cyberpunk 2077 запущен. Закройте игру и повторите попытку.");
+            throw new InstallerException(L.T("Cyberpunk 2077 запущен. Закройте игру и повторите попытку.",
+                "Cyberpunk 2077 is running. Close the game and try again."));
     }
 
     private static Stream OpenPayload() =>
         Assembly.GetExecutingAssembly().GetManifestResourceStream(PayloadResource)
-        ?? throw new InstallerException("В инсталляторе отсутствует архив VR-порта.");
+        ?? throw new InstallerException(L.T("В инсталляторе отсутствует архив VR-порта.",
+            "The installer does not contain the VR port archive."));
 
     private static string NormalizeEntry(string entryName)
     {
         var relative = entryName.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
         if (Path.IsPathRooted(relative) || relative.Split(Path.DirectorySeparatorChar).Any(p => p == ".."))
-            throw new InstallerException($"Недопустимый путь в архиве: {entryName}");
+            throw new InstallerException(L.T($"Недопустимый путь в архиве: {entryName}", $"Invalid archive path: {entryName}"));
         return relative;
     }
 
@@ -339,7 +363,8 @@ internal sealed class InstallerEngine
         var fullRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         var fullPath = Path.GetFullPath(Path.Combine(root, relative));
         if (!fullPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
-            throw new InstallerException($"Путь выходит за пределы папки игры: {relative}");
+            throw new InstallerException(L.T($"Путь выходит за пределы папки игры: {relative}",
+                $"Path escapes the game folder: {relative}"));
         return fullPath;
     }
 
@@ -378,19 +403,22 @@ internal sealed class InstallerEngine
         foreach (var relative in manifest.DisabledFiles)
         {
             var stored = SafeCombine(disabledRoot, relative);
-            if (!File.Exists(stored)) problems.Add($"Нет файла в защищённом хранилище: {relative}");
+            if (!File.Exists(stored)) problems.Add(L.T($"Нет файла в защищённом хранилище: {relative}",
+                $"File is missing from protected storage: {relative}"));
             var active = SafeCombine(gameRoot, relative);
             var backup = FindOriginalBackup(manifest, relative);
             if (backup is null)
             {
-                if (File.Exists(active)) problems.Add($"Файл VR-мода всё ещё активен: {relative}");
+                if (File.Exists(active)) problems.Add(L.T($"Файл VR-мода всё ещё активен: {relative}",
+                    $"VR mod file is still active: {relative}"));
             }
             else
             {
                 var original = SafeCombine(stateRoot, backup.BackupRelativePath);
                 if (!File.Exists(active) || !File.Exists(original) ||
                     !string.Equals(ComputeSha256(active), ComputeSha256(original), StringComparison.OrdinalIgnoreCase))
-                    problems.Add($"Исходный файл не восстановлен: {relative}");
+                    problems.Add(L.T($"Исходный файл не восстановлен: {relative}",
+                        $"Original file was not restored: {relative}"));
             }
         }
         return problems;
@@ -472,7 +500,8 @@ internal sealed class InstallerEngine
                 IsDirectory = isDirectory,
                 IsObsoleteItem = true
             });
-            progress?.Report(new(3 + i / 2, $"Архивация старого компонента: {relative}"));
+            progress?.Report(new(3 + i / 2, L.T($"Архивация старого компонента: {relative}",
+                $"Archiving old component: {relative}")));
         }
     }
 
