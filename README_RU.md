@@ -7,6 +7,8 @@
 ![Cyberpunk 2077](https://img.shields.io/badge/Cyberpunk%202077-2.5-FCEE0C?labelColor=111820)
 ![License](https://img.shields.io/badge/license-MIT-00ECFF)
 
+![Интерфейс Cyberpunk VR Port Installer](docs/images/installer-ui-en.png)
+
 Неофициальный автономный Windows-инсталлятор для
 [Cyberpunk VR Port 0.2.2](https://github.com/dariulone/cyberpunk-vr-port/releases/tag/0.2.2).
 Он устанавливает VR-порт, проверяет совместимость игры, помогает поставить зависимости и умеет
