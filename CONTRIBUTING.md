@@ -8,7 +8,7 @@ Thank you for helping improve the project.
 
 1. Open an issue describing the bug or proposed change.
 2. Do not commit the game, save files, crash dumps, or Nexus Mods archives.
-3. Do not update the embedded VR Port without prior discussion: version 0.1.9 is intentionally pinned.
+3. Do not update the embedded VR Port without prior discussion: version 0.2.2 is intentionally pinned.
 
 ## Local validation
 

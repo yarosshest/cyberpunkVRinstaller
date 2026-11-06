@@ -9,7 +9,7 @@ Select **Browse…** and choose the Cyberpunk 2077 root directory. It must conta
 
 ## Incompatible game version
 
-Cyberpunk VR Port 0.1.9 targets Cyberpunk 2077 2.5. Do not bypass the version check: the native plugin
+Cyberpunk VR Port 0.2.2 targets Cyberpunk 2077 2.5. Do not bypass the version check: the native plugin
 uses addresses from a specific game build.
 
 ## Crash after installation
@@ -28,10 +28,11 @@ may fail to load while their required mods are disabled.
 not necessarily a DLL crash. If the report contains `IsLoadingSavedSession=true`, test a new game and
 an earlier save.
 
-## More Occluders is not detected
+## Old dependency mods
 
-Install **More Occluders (Scripted) v0.3** from Optional Files. ZIP, RAR, and 7z are supported.
-Expected file: `r6\scripts\MoreOccluders.reds`.
+VR Port 0.2.2 does not require More Occluders or the former CET/ArchiveXL/TweakXL/Codeware stack.
+More Occluders Scripted v0.3 has known compilation problems with Cyberpunk 2077 2.5; remove or update it
+if redscript compilation fails. Shared frameworks may stay installed when required by other mods.
 
 ## Files to attach to an issue
 

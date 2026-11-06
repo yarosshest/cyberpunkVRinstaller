@@ -9,7 +9,7 @@
 
 ## Несовместимая версия
 
-Cyberpunk VR Port 0.1.9 рассчитан на Cyberpunk 2077 2.5. Не обходите проверку: нативный плагин
+Cyberpunk VR Port 0.2.2 рассчитан на Cyberpunk 2077 2.5. Не обходите проверку: нативный плагин
 использует адреса конкретной сборки.
 
 ## Вылет после установки
@@ -28,10 +28,11 @@ Cyberpunk VR Port 0.1.9 рассчитан на Cyberpunk 2077 2.5. Не обх�
 Это не обязательно падение DLL. Если отчёт содержит `IsLoadingSavedSession=true`, проверьте новую игру
 и более раннее сохранение.
 
-## More Occluders не определяется
+## Старые моды-зависимости
 
-Установите **More Occluders (Scripted) v0.3** из Optional Files. Поддерживаются ZIP, RAR и 7z.
-Ожидаемый файл: `r6\scripts\MoreOccluders.reds`.
+VR Port 0.2.2 больше не требует More Occluders и прежний набор CET/ArchiveXL/TweakXL/Codeware.
+More Occluders Scripted v0.3 имеет известные проблемы компиляции с Cyberpunk 2077 2.5; удалите или
+обновите его при ошибке redscript. Общие фреймворки можно оставить, если они нужны другим модам.
 
 ## Какие файлы приложить к issue
 

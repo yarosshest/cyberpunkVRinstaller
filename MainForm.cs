@@ -5,7 +5,7 @@ namespace CyberpunkVRInstaller;
 
 internal sealed class MainForm : Form
 {
-    private const string BuildMarker = "SAFE MODE FIX 2";
+    private const string BuildMarker = "VR PORT 0.2.2";
     private readonly InstallerEngine _engine = new();
     private readonly ComponentInstaller _componentInstaller = new();
     private readonly ModSafeModeManager _safeModeManager = new();
@@ -35,7 +35,7 @@ internal sealed class MainForm : Form
 
     public MainForm()
     {
-        Text = $"Cyberpunk VR Port — Installer {InstallerEngine.ModVersion} — {BuildMarker}";
+        Text = $"Cyberpunk VR Port — Installer {InstallerEngine.InstallerVersion} — {BuildMarker}";
         ClientSize = new Size(1040, 740);
         MinimumSize = new Size(920, 680);
         BackColor = Background;
@@ -92,12 +92,12 @@ internal sealed class MainForm : Form
         };
         var version = new Label
         {
-            Text = $"{InstallerEngine.ModVersion}  •  FIX 2",
+            Text = $"VR {InstallerEngine.ModVersion}  •  INST {InstallerEngine.InstallerVersion}",
             Font = new Font("Consolas", 10F, FontStyle.Bold),
             ForeColor = Cyan,
             BackColor = PanelLight,
             AutoSize = false,
-            Size = new Size(170, 30),
+            Size = new Size(210, 30),
             TextAlign = ContentAlignment.MiddleCenter,
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
             Location = new Point(header.Width - 190, 27)
@@ -164,7 +164,7 @@ internal sealed class MainForm : Form
         _safeModeButton.Margin = new Padding(0, 4, 8, 4);
         _safeModeButton.Click += async (_, _) => await ToggleSafeModeAsync();
         depHeader.Controls.Add(_safeModeButton, 1, 0);
-        StyleButton(_archivesButton, "АРХИВЫ NEXUS…", false);
+        StyleButton(_archivesButton, "УСТАНОВИТЬ АРХИВ…", false);
         _archivesButton.Dock = DockStyle.Fill;
         _archivesButton.Margin = new Padding(0, 4, 8, 4);
         _archivesButton.Click += async (_, _) => await InstallLocalArchivesAsync();
@@ -439,7 +439,7 @@ internal sealed class MainForm : Form
         var root = _pathBox.Text.Trim();
         GameVersionChecker.EnsureCompatible(root);
         var checks = await Task.Run(() => DependencyChecker.Check(root));
-        var missing = checks.Where(d => !d.Found).Select(d => d.Name).ToArray();
+        var missing = checks.Where(d => d.Essential && !d.Found).Select(d => d.Name).ToArray();
         var conflicts = _engine.FindConflicts(root);
         var warnings = new List<string>();
         if (missing.Length > 0) warnings.Add("Не найдены зависимости:\n• " + string.Join("\n• ", missing));
@@ -457,8 +457,9 @@ internal sealed class MainForm : Form
         var root = _pathBox.Text.Trim();
         GameVersionChecker.EnsureCompatible(root);
         if (MessageBox.Show(this,
-                "Будут загружены и установлены последние официальные версии восьми компонентов с GitHub:\n\n" +
-                "RED4ext, Cyber Engine Tweaks, redscript, TweakXL, ArchiveXL, Codeware, Equipment-EX и Input Loader.\n\n" +
+                "Будет загружена и установлена последняя официальная версия RED4ext с GitHub.\n\n" +
+                "Cyberpunk VR Port 0.2.2 больше не требует CET, redscript, ArchiveXL, TweakXL, " +
+                "Codeware, Equipment-EX, Input Loader или моды Nexus. Они останутся на месте, если нужны другим модам.\n\n" +
                 "Продолжить?", "Установка компонентов", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
             return;
 
@@ -468,23 +469,13 @@ internal sealed class MainForm : Form
         }, "Компоненты GitHub установлены.");
         if (!succeeded) return;
 
-        var checks = await Task.Run(() => DependencyChecker.Check(root));
-        var nexusMissing = checks.Where(d => !d.Found && ComponentInstaller.NexusComponents.Any(n => d.Name.Contains(n.Name.Split(' ')[0], StringComparison.OrdinalIgnoreCase))).ToArray();
-        if (nexusMissing.Length > 0 && MessageBox.Show(this,
-                "Остались компоненты с Nexus Mods. Открыть их страницы для ручного скачивания?\n\n" +
-                "После скачивания нажмите «Архивы Nexus…» и выберите ZIP, RAR или 7z-файлы.",
-                "Компоненты Nexus", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
-        {
-            foreach (var nexus in ComponentInstaller.NexusComponents)
-                Process.Start(new ProcessStartInfo(nexus.Url) { UseShellExecute = true });
-        }
     }
 
     private async Task InstallLocalArchivesAsync()
     {
         using var dialog = new OpenFileDialog
         {
-            Title = "Выберите скачанные архивы компонентов Nexus",
+            Title = "Выберите архивы модов или компонентов",
             Filter = "Архивы модов (*.zip;*.rar;*.7z)|*.zip;*.rar;*.7z|ZIP (*.zip)|*.zip|RAR (*.rar)|*.rar|7z (*.7z)|*.7z",
             Multiselect = true,
             CheckFileExists = true
@@ -502,8 +493,7 @@ internal sealed class MainForm : Form
                 var missingAfter = DependencyChecker.Check(root).Where(d => !d.Found)
                     .Select(d => d.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 if (missingBefore.SetEquals(missingAfter))
-                    throw new InstallerException("Архив распакован, но ни один отсутствующий компонент не обнаружен. " +
-                        "Для More Occluders нужен файл «More Occluders (Scripted)» версии 0.3 из раздела Optional Files мода №33136.");
+                    throw new InstallerException("Архив распакован, но отсутствующий компонент не обнаружен.");
             }
         },
             "Выбранные компоненты установлены.");

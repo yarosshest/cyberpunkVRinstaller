@@ -15,22 +15,10 @@ internal sealed class ComponentInstaller
 
     private static readonly ComponentDefinition[] Components =
     [
-        new("RED4ext", "WopsS/RED4ext", n => IsZip(n) && !Has(n, "symbols")),
-        new("Cyber Engine Tweaks", "maximegmd/CyberEngineTweaks", IsZip),
-        new("redscript", "jac3km4/redscript", n => IsZip(n) && Has(n, "windows")),
-        new("TweakXL", "psiberx/cp2077-tweak-xl", n => IsZip(n) && !Has(n, "pdb")),
-        new("ArchiveXL", "psiberx/cp2077-archive-xl", n => IsZip(n) && !Has(n, "pdb")),
-        new("Codeware", "psiberx/cp2077-codeware", n => IsZip(n) && !Has(n, "pdb")),
-        new("Equipment-EX", "psiberx/cp2077-equipment-ex", IsZip),
-        new("Input Loader", "jackhumbert/cyberpunk2077-input-loader", n => IsZip(n) && !Has(n, "pdb"))
+        new("RED4ext", "WopsS/RED4ext", n => IsZip(n) && !Has(n, "symbols"))
     ];
 
-    public static readonly (string Name, string Url)[] NexusComponents =
-    [
-        ("Visual Holsters (Automatic Clothes Swap)", "https://www.nexusmods.com/cyberpunk2077/mods/21936?tab=files"),
-        ("Nova Optics", "https://www.nexusmods.com/cyberpunk2077/mods/29190?tab=files"),
-        ("More Occluders — Scripted v0.3 из Optional Files", "https://www.nexusmods.com/cyberpunk2077/mods/33136?tab=files")
-    ];
+    public static readonly (string Name, string Url)[] NexusComponents = [];
 
     private static bool IsZip(string name) => name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
     private static bool Has(string name, string value) => name.Contains(value, StringComparison.OrdinalIgnoreCase);

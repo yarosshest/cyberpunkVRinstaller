@@ -8,17 +8,7 @@ internal static class DependencyChecker
 
     private static readonly Definition[] Definitions =
     [
-        new("RED4ext", "1.31.0", [@"red4ext\RED4ext.dll"], ["red4ext.dll"]),
-        new("Cyber Engine Tweaks", "1.38.0", [@"bin\x64\plugins\cyber_engine_tweaks.asi", @"bin\x64\plugins\cyber_engine_tweaks\cyber_engine_tweaks.asi"], ["cyber_engine_tweaks.asi"]),
-        new("ArchiveXL", "1.28.0", [@"red4ext\plugins\ArchiveXL\ArchiveXL.dll"], ["archivexl.dll"]),
-        new("TweakXL", "1.12.0", [@"red4ext\plugins\TweakXL\TweakXL.dll"], ["tweakxl.dll"]),
-        new("redscript", "0.5.32", [@"engine\tools\scc.exe"], ["scc.exe", "redscript"]),
-        new("Codeware", "1.21.0", [@"red4ext\plugins\Codeware\Codeware.dll"], ["codeware.dll"]),
-        new("Visual Holsters (Automatic Clothes Swap)", "required", [], ["visualholster", "automaticclothesswap", "automatic_clothes_swap"]),
-        new("Equipment-EX", "required", [], ["equipmentex", "equipment-ex", "equipment_ex"]),
-        new("Nova Optics", "required", [], ["novaoptics", "nova_optics", "nova-optics"]),
-        new("Input Loader", "required", [@"red4ext\plugins\input_loader\input_loader.dll", @"red4ext\plugins\InputLoader\InputLoader.dll"], ["inputloader", "input_loader"]),
-        new("More Occluders (Scripted v0.3)", "0.3", [], ["moreoccluders", "more_occluders", "more-occluders"])
+        new("RED4ext", "1.31.0", [@"red4ext\RED4ext.dll"], ["red4ext.dll"])
     ];
 
     public static IReadOnlyList<DependencyStatus> Check(string gameRoot)

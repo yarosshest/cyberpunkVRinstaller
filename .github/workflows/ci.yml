@@ -23,11 +23,9 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Restore
-        run: dotnet restore --runtime win-x64
-
-      - name: Build
-        run: dotnet build --configuration Release --runtime win-x64 --no-restore
+      - name: Build installer
+        shell: pwsh
+        run: ./build.ps1
 
       - name: Self-test
         shell: pwsh

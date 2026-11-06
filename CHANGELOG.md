@@ -4,6 +4,16 @@
 
 All notable project changes are documented in this file.
 
+## [0.2.2] - 2026-11-07
+
+### Changed
+
+- updated the embedded Cyberpunk VR Port payload from 0.1.9 to 0.2.2;
+- reduced required components to RED4ext 1.31.0 or newer;
+- added migration and backup handling for the old 0.1.9 layout;
+- added verified payload download for source and CI builds;
+- retained the requested release filename `CyberpunkVRPortInstaller-0.1.9.exe`.
+
 ## [0.1.9] - 2026-11-06
 
 ### Added

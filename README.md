@@ -8,20 +8,20 @@
 ![License](https://img.shields.io/badge/license-MIT-00ECFF)
 
 An unofficial, self-contained Windows installer for
-[Cyberpunk VR Port 0.1.9](https://github.com/dariulone/cyberpunk-vr-port/releases/tag/0.1.9).
+[Cyberpunk VR Port 0.2.2](https://github.com/dariulone/cyberpunk-vr-port/releases/tag/0.2.2).
 It installs the VR port, validates game compatibility, helps install dependencies, and can safely
 disable mods while troubleshooting crashes.
 
 > [!IMPORTANT]
-> This installer branch is intentionally pinned to Cyberpunk VR Port 0.1.9 and Cyberpunk 2077 2.5.
+> This installer branch is intentionally pinned to Cyberpunk VR Port 0.2.2 and Cyberpunk 2077 2.5.
 > Newer upstream releases may use a different layout and have different requirements.
 
 ## Features
 
 - detects Cyberpunk 2077 installations from Steam, GOG, and Epic Games;
 - checks the `Cyberpunk2077.exe` version at startup;
-- installs the official VR Port 0.1.9 archive without downloading it at runtime;
-- installs RED4ext, CET, redscript, ArchiveXL, TweakXL, Codeware, Equipment-EX, and Input Loader;
+- installs the official VR Port 0.2.2 archive;
+- installs the only required framework, RED4ext 1.31.0 or newer;
 - installs manually downloaded Nexus Mods archives in ZIP, RAR, and 7z formats;
 - backs up replaced files and safely removes the VR port;
 - disables only the VR port while leaving shared components installed;
@@ -34,20 +34,21 @@ disable mods while troubleshooting crashes.
 1. Download `CyberpunkVRPortInstaller-0.1.9.exe` from [Releases](../../releases).
 2. Close Cyberpunk 2077 and run the installer as administrator.
 3. Verify that the correct game directory and version 2.5 are displayed.
-4. Select **Install components**, then add the required Nexus archives.
+4. Select **Install components** to install or update RED4ext.
 5. Select **Install**.
 6. Start OpenXR/SteamVR, then launch Cyberpunk 2077.
 
 The installer does not include the game, paid content, or Nexus Mods files.
 
-## Nexus Mods components
+## Dependencies and upgrades
 
-Visual Holsters, Nova Optics, and
-[More Occluders](https://www.nexusmods.com/cyberpunk2077/mods/33136?tab=files)
-must be downloaded manually. After downloading them, select the archives with **Nexus archives…**.
+VR Port 0.2.2 no longer requires CET, redscript, ArchiveXL, TweakXL, Codeware, Equipment-EX,
+Input Loader, Visual Holsters, Nova Optics, or More Occluders. The plugin now provides the required
+Lua host, archive mounting, TweakDB changes, input merging, and script compilation itself.
 
-More Occluders requires **More Occluders (Scripted) v0.3** from the **Optional Files** section.
-After installation, `r6\scripts\MoreOccluders.reds` must exist.
+Existing shared frameworks are not removed because other mods may still require them. During an upgrade,
+the installer removes obsolete VR Port 0.1.9 files with backups before installing the new one-folder layout
+under `red4ext\plugins\cyberpunkvrport`.
 
 ## Safe Mode
 
@@ -75,8 +76,8 @@ switching modes. See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for deta
 
 ## Building from source
 
-.NET SDK 8 or newer is required. The repository contains the pinned official VR port archive and a
-minimal licensed 7-Zip runtime.
+.NET SDK 8 or newer is required. `build.ps1` downloads the pinned official VR port archive when missing,
+verifies its SHA-256, and embeds it together with a minimal licensed 7-Zip runtime.
 
 ```powershell
 pwsh ./build.ps1

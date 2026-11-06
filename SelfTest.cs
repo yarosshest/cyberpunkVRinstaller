@@ -21,22 +21,28 @@ internal static class SelfTest
             }
             catch (InstallerException) { }
 
-            var originalPath = Path.Combine(root, "archive", "pc", "mod", "cyberpunkvrport.archive.xl");
+            var originalPath = Path.Combine(root, "bin", "x64", "openvr_api.dll");
             Directory.CreateDirectory(Path.GetDirectoryName(originalPath)!);
             File.WriteAllText(originalPath, "original file");
 
             var obsolete = Path.Combine(root, "archive", "pc", "mod", "VRCigarette.archive.xl");
+            Directory.CreateDirectory(Path.GetDirectoryName(obsolete)!);
             File.WriteAllText(obsolete, "obsolete original");
+
+            var oldPlugin = Path.Combine(root, "red4ext", "plugins", "CyberpunkVR_Stereo", "CyberpunkVR_Stereo.dll");
+            Directory.CreateDirectory(Path.GetDirectoryName(oldPlugin)!);
+            File.WriteAllText(oldPlugin, "VR Port 0.1.9 fixture");
 
             var engine = new InstallerEngine();
             engine.Install(root);
             Assert(engine.IsInstalled(root), "manifest was not created");
-            Assert(File.Exists(Path.Combine(root, "red4ext", "plugins", "CyberpunkVR_Stereo", "CyberpunkVR_Stereo.dll")), "main plugin missing");
+            Assert(File.Exists(Path.Combine(root, "red4ext", "plugins", "cyberpunkvrport", "cyberpunkvrport.dll")), "main plugin missing");
             Assert(!File.Exists(obsolete), "obsolete file was not removed");
+            Assert(!File.Exists(oldPlugin), "VR Port 0.1.9 plugin was not removed during migration");
 
             var disabled = engine.Disable(root);
             Assert(disabled.State == VrModState.Disabled, "VR mod did not enter disabled state");
-            Assert(!File.Exists(Path.Combine(root, "red4ext", "plugins", "CyberpunkVR_Stereo", "CyberpunkVR_Stereo.dll")),
+            Assert(!File.Exists(Path.Combine(root, "red4ext", "plugins", "cyberpunkvrport", "cyberpunkvrport.dll")),
                 "VR plugin remains active after disable");
             Assert(File.ReadAllText(originalPath) == "original file", "original overwritten file was not restored while disabled");
             Assert(engine.GetModState(root).Problems.Count == 0, "disabled VR verification failed");
@@ -84,6 +90,7 @@ internal static class SelfTest
             Assert(result.PreservedModifiedFiles.Count == 0, "unexpected modified files");
             Assert(File.ReadAllText(originalPath) == "original file", "overwritten file was not restored");
             Assert(File.ReadAllText(obsolete) == "obsolete original", "obsolete file was not restored");
+            Assert(File.ReadAllText(oldPlugin) == "VR Port 0.1.9 fixture", "old plugin was not restored after uninstall");
             Assert(!engine.IsInstalled(root), "manifest remains after uninstall");
 
             var componentArchive = Path.Combine(root, "test-component.zip");
@@ -97,8 +104,7 @@ internal static class SelfTest
             components.InstallLocalArchives(root, [componentArchive]);
             Assert(File.ReadAllText(Path.Combine(root, "red4ext", "plugins", "TestComponent", "TestComponent.dll")) == "component payload",
                 "component wrapper folder was not normalized");
-            Assert(ComponentInstaller.NexusComponents.Single(n => n.Name.StartsWith("More Occluders")).Url.Contains("/33136"),
-                "More Occluders Nexus URL is incorrect");
+            Assert(ComponentInstaller.NexusComponents.Length == 0, "VR Port 0.2.2 must not require Nexus components");
 
             var sevenZip = @"C:\Program Files\7-Zip\7z.exe";
             if (File.Exists(sevenZip))
@@ -143,9 +149,9 @@ internal static class SelfTest
             File.WriteAllText(Path.Combine(root, "bin", "x64", "Cyberpunk2077.exe"), "test executable");
             var installer = new ComponentInstaller();
             var result = await installer.InstallGitHubComponentsAsync(root, new InlineProgress(p => Console.WriteLine($"{p.Percent,3}% {p.Message}")));
-            Assert(result.InstalledComponents.Count == 8, "not all GitHub components were installed");
+            Assert(result.InstalledComponents.Count == 1, "RED4ext was not installed");
             var statuses = DependencyChecker.Check(root);
-            foreach (var expected in new[] { "RED4ext", "Cyber Engine Tweaks", "redscript", "TweakXL", "ArchiveXL", "Codeware", "Equipment-EX", "Input Loader" })
+            foreach (var expected in new[] { "RED4ext" })
                 Assert(statuses.Any(s => s.Name == expected && s.Found), $"component was not detected after install: {expected}");
             Console.WriteLine("ONLINE SELF-TEST PASSED");
             return 0;

@@ -8,16 +8,24 @@ namespace CyberpunkVRInstaller;
 
 internal sealed class InstallerEngine
 {
-    public const string ModVersion = "0.1.9";
+    public const string InstallerVersion = "0.1.9";
+    public const string ModVersion = "0.2.2";
     private const string PayloadResource = "CyberpunkVRPort.Payload.zip";
     private const string StateDirectoryName = ".cyberpunk-vr-installer";
     private const string ManifestFileName = "install-manifest.json";
 
     private static readonly string[] ObsoletePaths =
     [
+        @"red4ext\plugins\CyberpunkVR_Stereo",
         @"red4ext\plugins\CyberpunkVR_Hands",
         @"r6\scripts\CyberpunkVRPort_LootUi",
         @"r6\scripts\CyberpunkVRPort_SettingsGuard",
+        @"r6\scripts\CyberpunkVRPort_Cyberware\vrport_launcher_tweak.reds",
+        @"r6\tweaks\vrport",
+        @"r6\tweaks\vrcigarette",
+        @"archive\pc\mod\cyberpunkvrport.archive",
+        @"archive\pc\mod\cyberpunkvrport.archive.xl",
+        @"engine\config\platform\pc\vrcam_cpu_tweaks.ini",
         @"archive\pc\mod\VRCigarette.archive.xl",
         @"archive\pc\mod\vrport_basketball.archive",
         @"archive\pc\mod\vrport_mag.archive",
@@ -302,10 +310,7 @@ internal sealed class InstallerEngine
 
         var pluginDir = Path.Combine(gameRoot, "red4ext", "plugins", "CyberpunkVR_Stereo");
         if (Directory.Exists(pluginDir))
-        {
-            var dlls = Directory.EnumerateFiles(pluginDir, "*.dll").ToArray();
-            if (dlls.Length > 1) result.Add($"В CyberpunkVR_Stereo найдено DLL: {dlls.Length}; RED4ext загрузит каждую");
-        }
+            result.Add(@"red4ext\plugins\CyberpunkVR_Stereo — осталась старая версия VR Port 0.1.9");
         return result;
     }
 
