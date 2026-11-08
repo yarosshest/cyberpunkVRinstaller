@@ -8,7 +8,7 @@ namespace CyberpunkVRInstaller;
 
 internal sealed class InstallerEngine
 {
-    public const string ModVersion = "0.2.2";
+    public const string ModVersion = "0.2.3";
     public const string InstallerVersion = ModVersion;
     private const string PayloadResource = "CyberpunkVRPort.Payload.zip";
     private const string StateDirectoryName = ".cyberpunk-vr-installer";

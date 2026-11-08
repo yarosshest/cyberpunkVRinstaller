@@ -104,7 +104,7 @@ internal static class SelfTest
             components.InstallLocalArchives(root, [componentArchive]);
             Assert(File.ReadAllText(Path.Combine(root, "red4ext", "plugins", "TestComponent", "TestComponent.dll")) == "component payload",
                 "component wrapper folder was not normalized");
-            Assert(ComponentInstaller.NexusComponents.Length == 0, "VR Port 0.2.2 must not require Nexus components");
+            Assert(ComponentInstaller.NexusComponents.Length == 0, "VR Port 0.2.3 must not require Nexus components");
 
             var sevenZip = @"C:\Program Files\7-Zip\7z.exe";
             if (File.Exists(sevenZip))

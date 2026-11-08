@@ -7,7 +7,7 @@ dist/
 .idea/
 TestResults/
 artifacts/
-vendor/CyberpunkVRPort-0.2.2.zip
+vendor/CyberpunkVRPort-0.2.3.zip
 *.log
 *.user
 *.suo

@@ -5,7 +5,7 @@ namespace CyberpunkVRInstaller;
 
 internal sealed class MainForm : Form
 {
-    private const string BuildMarker = "VR PORT 0.2.2";
+    private const string BuildMarker = "VR PORT 0.2.3";
     private readonly InstallerEngine _engine = new();
     private readonly ComponentInstaller _componentInstaller = new();
     private readonly ModSafeModeManager _safeModeManager = new();
@@ -533,11 +533,11 @@ internal sealed class MainForm : Form
         GameVersionChecker.EnsureCompatible(root);
         if (MessageBox.Show(this,
                 L.T("Будет загружена и установлена последняя официальная версия RED4ext с GitHub.\n\n" +
-                    "Cyberpunk VR Port 0.2.2 больше не требует CET, redscript, ArchiveXL, TweakXL, " +
+                    "Cyberpunk VR Port 0.2.3 больше не требует CET, redscript, ArchiveXL, TweakXL, " +
                     "Codeware, Equipment-EX, Input Loader или моды Nexus. Они останутся на месте, если нужны другим модам.\n\n" +
                     "Продолжить?",
                     "The latest official RED4ext version will be downloaded and installed from GitHub.\n\n" +
-                    "Cyberpunk VR Port 0.2.2 no longer requires CET, redscript, ArchiveXL, TweakXL, " +
+                    "Cyberpunk VR Port 0.2.3 no longer requires CET, redscript, ArchiveXL, TweakXL, " +
                     "Codeware, Equipment-EX, Input Loader, or Nexus mods. They will remain in place if other mods need them.\n\n" +
                     "Continue?"), L.T("Установка компонентов", "Install components"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)

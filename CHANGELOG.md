@@ -4,6 +4,14 @@
 
 All notable project changes are documented in this file.
 
+## [0.2.3] - 2026-11-08
+
+### Changed
+
+- updated the embedded Cyberpunk VR Port payload from 0.2.2 to 0.2.3;
+- updated the verified payload checksum, installer metadata, release filename, UI marker, and documentation for 0.2.3;
+- retained the Cyberpunk 2077 2.5 and RED4ext 1.31.0 compatibility requirements from upstream.
+
 ## [0.2.2] - 2026-11-07
 
 ### Changed

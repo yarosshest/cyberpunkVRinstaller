@@ -8,9 +8,9 @@
     <AssemblyName>CyberpunkVRPortInstaller</AssemblyName>
     <RootNamespace>CyberpunkVRInstaller</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>0.2.2</Version>
-    <FileVersion>0.2.2.0</FileVersion>
-    <AssemblyVersion>0.2.2.0</AssemblyVersion>
+    <Version>0.2.3</Version>
+    <FileVersion>0.2.3.0</FileVersion>
+    <AssemblyVersion>0.2.3.0</AssemblyVersion>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -20,7 +20,7 @@
     <NuGetAudit>false</NuGetAudit>
   </PropertyGroup>
   <ItemGroup>
-    <EmbeddedResource Include="vendor\CyberpunkVRPort-0.2.2.zip" LogicalName="CyberpunkVRPort.Payload.zip" />
+    <EmbeddedResource Include="vendor\CyberpunkVRPort-0.2.3.zip" LogicalName="CyberpunkVRPort.Payload.zip" />
     <EmbeddedResource Include="THIRD-PARTY-NOTICES.txt" LogicalName="ThirdPartyNotices.txt" />
     <EmbeddedResource Include="vendor\7zip\7z.exe" LogicalName="SevenZip.exe" />
     <EmbeddedResource Include="vendor\7zip\7z.dll" LogicalName="SevenZip.dll" />

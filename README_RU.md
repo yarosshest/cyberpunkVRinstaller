@@ -10,12 +10,12 @@
 ![Интерфейс Cyberpunk VR Port Installer](docs/images/installer-ui-en.png)
 
 Неофициальный автономный Windows-инсталлятор для
-[Cyberpunk VR Port 0.2.2](https://github.com/dariulone/cyberpunk-vr-port/releases/tag/0.2.2).
+[Cyberpunk VR Port 0.2.3](https://github.com/dariulone/cyberpunk-vr-port/releases/tag/0.2.3).
 Он устанавливает VR-порт, проверяет совместимость игры, помогает поставить зависимости и умеет
 безопасно отключать моды для диагностики вылетов.
 
 > [!IMPORTANT]
-> Эта ветка установщика намеренно закреплена на Cyberpunk VR Port 0.2.2 и Cyberpunk 2077 2.5.
+> Эта ветка установщика намеренно закреплена на Cyberpunk VR Port 0.2.3 и Cyberpunk 2077 2.5.
 > Более новые версии исходного VR-порта могут иметь другую структуру и требования.
 
 ## Возможности
@@ -23,7 +23,7 @@
 - переключение всего интерфейса между русским и английским с сохранением выбранного языка;
 - поиск Cyberpunk 2077 в Steam, GOG и Epic Games;
 - проверка версии `Cyberpunk2077.exe` при запуске;
-- установка официального архива VR Port 0.2.2;
+- установка официального архива VR Port 0.2.3;
 - установка единственного обязательного фреймворка — RED4ext 1.31.0 или новее;
 - установка вручную загруженных архивов Nexus Mods в форматах ZIP, RAR и 7z;
 - резервное копирование заменяемых файлов и безопасное удаление VR-порта;
@@ -34,7 +34,7 @@
 
 ## Быстрый старт
 
-1. Скачайте `CyberpunkVRPortInstaller-0.2.2.exe` на странице [Releases](../../releases).
+1. Скачайте `CyberpunkVRPortInstaller-0.2.3.exe` на странице [Releases](../../releases).
 2. Закройте Cyberpunk 2077 и запустите установщик от имени администратора.
 3. Убедитесь, что определена правильная папка игры и отображается версия 2.5.
 4. Нажмите **«Установить компоненты»**, чтобы установить или обновить RED4ext.
@@ -45,8 +45,8 @@
 
 ## Зависимости и обновление
 
-VR Port 0.2.2 больше не требует CET, redscript, ArchiveXL, TweakXL, Codeware, Equipment-EX,
-Input Loader, Visual Holsters, Nova Optics или More Occluders. Плагин сам предоставляет Lua-хост,
+VR Port 0.2.3 больше не требует CET, redscript, ArchiveXL, TweakXL, Codeware, Equipment-EX,
+Input Loader, Visual Holsters, Valentino Holsters, Nova Optics или More Occluders. Плагин сам предоставляет Lua-хост,
 монтирование архива, изменения TweakDB, объединение ввода и компиляцию скриптов.
 
 Общие фреймворки не удаляются, потому что они могут быть нужны другим модам. При обновлении установщик
@@ -87,7 +87,7 @@ Safe Mode временно переносит в защищённое храни
 pwsh ./build.ps1
 ```
 
-Результат: `dist/CyberpunkVRPortInstaller-0.2.2.exe`.
+Результат: `dist/CyberpunkVRPortInstaller-0.2.3.exe`.
 
 Локальная проверка без изменения установленной игры:
 

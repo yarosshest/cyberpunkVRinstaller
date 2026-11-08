@@ -10,12 +10,12 @@
 ![Cyberpunk VR Port Installer interface](docs/images/installer-ui-en.png)
 
 An unofficial, self-contained Windows installer for
-[Cyberpunk VR Port 0.2.2](https://github.com/dariulone/cyberpunk-vr-port/releases/tag/0.2.2).
+[Cyberpunk VR Port 0.2.3](https://github.com/dariulone/cyberpunk-vr-port/releases/tag/0.2.3).
 It installs the VR port, validates game compatibility, helps install dependencies, and can safely
 disable mods while troubleshooting crashes.
 
 > [!IMPORTANT]
-> This installer branch is intentionally pinned to Cyberpunk VR Port 0.2.2 and Cyberpunk 2077 2.5.
+> This installer branch is intentionally pinned to Cyberpunk VR Port 0.2.3 and Cyberpunk 2077 2.5.
 > Newer upstream releases may use a different layout and have different requirements.
 
 ## Features
@@ -23,7 +23,7 @@ disable mods while troubleshooting crashes.
 - switches the complete interface between English and Russian and remembers the selected language;
 - detects Cyberpunk 2077 installations from Steam, GOG, and Epic Games;
 - checks the `Cyberpunk2077.exe` version at startup;
-- installs the official VR Port 0.2.2 archive;
+- installs the official VR Port 0.2.3 archive;
 - installs the only required framework, RED4ext 1.31.0 or newer;
 - installs manually downloaded Nexus Mods archives in ZIP, RAR, and 7z formats;
 - backs up replaced files and safely removes the VR port;
@@ -34,7 +34,7 @@ disable mods while troubleshooting crashes.
 
 ## Quick start
 
-1. Download `CyberpunkVRPortInstaller-0.2.2.exe` from [Releases](../../releases).
+1. Download `CyberpunkVRPortInstaller-0.2.3.exe` from [Releases](../../releases).
 2. Close Cyberpunk 2077 and run the installer as administrator.
 3. Verify that the correct game directory and version 2.5 are displayed.
 4. Select **Install components** to install or update RED4ext.
@@ -45,8 +45,8 @@ The installer does not include the game, paid content, or Nexus Mods files.
 
 ## Dependencies and upgrades
 
-VR Port 0.2.2 no longer requires CET, redscript, ArchiveXL, TweakXL, Codeware, Equipment-EX,
-Input Loader, Visual Holsters, Nova Optics, or More Occluders. The plugin now provides the required
+VR Port 0.2.3 no longer requires CET, redscript, ArchiveXL, TweakXL, Codeware, Equipment-EX,
+Input Loader, Visual Holsters, Valentino Holsters, Nova Optics, or More Occluders. The plugin now provides the required
 Lua host, archive mounting, TweakDB changes, input merging, and script compilation itself.
 
 Existing shared frameworks are not removed because other mods may still require them. During an upgrade,
@@ -86,7 +86,7 @@ verifies its SHA-256, and embeds it together with a minimal licensed 7-Zip runti
 pwsh ./build.ps1
 ```
 
-Output: `dist/CyberpunkVRPortInstaller-0.2.2.exe`.
+Output: `dist/CyberpunkVRPortInstaller-0.2.3.exe`.
 
 Run the local self-test without modifying an installed game:
 
